@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "\nA <- R6Class(\"A\",\n             public = list(\n               f = function() print(\"A::f\"),\n               g = function() print(\"A::g\"),\n               h = function() print(\"A::h\")\n             ))\nB <- R6Class(\"B\", inherit = A,\n             public = list(\n               g = function() print(\"B::g\"),\n               h = function() print(\"B::h\")\n             ))\nC <- R6Class(\"C\", inherit = B,\n             public = list(\n               h = function() print(\"C::h\")\n             ))\n\nx <- A$new()\ny <- B$new()\nz <- C$new()\n\nx$f()\ny$f()\nz$f()\n\nx$g()\ny$g()\nz$g()\n\nx$h()\ny$h()\nz$h()\n\n\nA <- R6Class(\"A\",\n             private = list(x = 5),\n             public = list(\n               f = function() print(\"A::f\"),\n               g = function() print(\"A::g\"),\n               h = function() print(\"A::h\")\n             ))\nB <- R6Class(\"B\", inherit = A,\n             public = list(\n               g = function() private$x,\n               h = function() print(\"B::h\")\n             ))\nC <- R6Class(\"C\", inherit = B,\n             public = list(\n               h = function() print(\"C::h\")\n             ))\n\ny <- B$new()\ny$g()\n",
+    "created" : 1483725753989.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2422013005",
+    "id" : "9AB94238",
+    "lastKnownWriteTime" : 1483725822,
+    "last_content_update" : 1483725822335,
+    "path" : "~/Dropbox/Misc. writing/Books/Advanced Statistical Programming in R/Object Oriented Programming in R/R/R6hierarchy.R",
+    "project_path" : "R6hierarchy.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

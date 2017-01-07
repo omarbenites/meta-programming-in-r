@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "\nA <- R6Class(\"A\", public = list(x = 1:5))\n\nB <- R6Class(\"B\", public = list(a = A$new()))\n\nx <- B$new()\ny <- B$new()\n\nx$a$x\nx$a$x <- 1:3\nx$a$x\ny$a$x\n\nB <- R6Class(\"B\", \n             public = list(\n               a = NULL,\n               initialize = function() {\n                 self$a <- A$new()\n               }))\n\nx <- B$new()\ny <- B$new()\n\nx$a$x\nx$a$x <- 1:3\nx$a$x\ny$a$x\n\nz <- x$clone()\nz$a$x <- 1:5\nx$a$x\n\nx <- B$new()\ny <- x$clone(deep = TRUE)\n\nx$a$x\ny$a$x\ny$a$x <- NULL\ny$a$x\nx$a$x\n",
+    "created" : 1483725294177.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1738507536",
+    "id" : "BC8CCF9D",
+    "lastKnownWriteTime" : 1483725731,
+    "last_content_update" : 1483725731310,
+    "path" : "~/Dropbox/Misc. writing/Books/Advanced Statistical Programming in R/Object Oriented Programming in R/R/clone.R",
+    "project_path" : "clone.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

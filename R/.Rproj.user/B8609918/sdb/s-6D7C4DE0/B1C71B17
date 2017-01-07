@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "\nmodulus <- setClass(\"modulus\", \n                    slots = c(\n                      value = \"numeric\",\n                      n = \"numeric\"\n                    ))\n\nsetMethod(\"show\", signature = \"modulus\",\n          definition = function(object) {\n            cat(\"Modulus\", object@n, \"values:\\n\")\n            print(object@value)\n          })\n\n(x <- modulus(value = 1:6, n = 3))\n\nsetMethod(\"+\", signature = c(\"modulus\", \"modulus\"),\n          definition = function(e1, e2) {\n            if (e1@n != e2@n) stop(\"Incompatible modulus\")\n            modulus(value = e1@value + e2@value,\n                    n = e1@n)\n          })\nsetMethod(\"+\", signature = c(\"modulus\", \"numeric\"),\n          definition = function(e1, e2) {\n            modulus(value = e1@value + e2,\n                    n = e1@n)\n          })\nsetMethod(\"+\", signature = c(\"numeric\", \"modulus\"),\n          definition = function(e1, e2) {\n            modulus(value = e1 + e2@value,\n                    n = e2@n)\n          })\n\nx + 1:6\n1:6 + x\n\ny <- modulus(value = 1:6, n = 2)\n#x + y\n\ny <- modulus(value = 1:6, n = 3)\nx + y\n\nsetMethod(\"Arith\", \n          signature = c(\"modulus\", \"modulus\"),\n          definition = function(e1, e2) {\n            if (e1@n != e2@n) stop(\"Incompatible modulus\")\n            modulus(value = callGeneric(e1@value, e2@value),\n                    n = e1@n)\n          })\nsetMethod(\"Arith\", \n          signature = c(\"modulus\", \"numeric\"),\n          definition = function(e1, e2) {\n            modulus(value = callGeneric(e1@value, e2),\n                    n = e1@n)\n          })\nsetMethod(\"Arith\", \n          signature = c(\"numeric\", \"modulus\"),\n          definition = function(e1, e2) {\n            modulus(value = callGeneric(e1, e2@value),\n                    n = e2@n)\n          })\n\nx * y\n2 * x\n",
+    "created" : 1483535995184.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2534116328",
+    "id" : "B1C71B17",
+    "lastKnownWriteTime" : 1483636269,
+    "last_content_update" : 1483636269726,
+    "path" : "~/Dropbox/Misc. writing/Books/Advanced Statistical Programming in R/Object Oriented Programming in R/R/s4modulus.R",
+    "project_path" : "s4modulus.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
