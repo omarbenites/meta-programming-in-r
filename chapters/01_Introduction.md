@@ -14,4 +14,6 @@ If you have used R before for data analysis and are familiar with writing expres
 
 ## About this book
 
-This book gives an introduction to 
+This book gives an introduction to meta-programming. Meta-programming is when you write programs manipulating other programs: you treat code as data that you can generate, analyse, or modify. R is a very high-level language where all operations are functions, and all functions are data that can be manipulated. There is great flexibility in how function calls and expressions are evaluated, and by exploiting this, we can create small domain-specific languages to extend R within the R language itself.
+
+In this book, you will learn how to manipulate functions and how to evaluate expressions in non-standard ways. 
