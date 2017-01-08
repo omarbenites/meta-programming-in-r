@@ -14,6 +14,11 @@ If you have used R before for data analysis and are familiar with writing expres
 
 ## About this book
 
-This book gives an introduction to meta-programming. Meta-programming is when you write programs manipulating other programs: you treat code as data that you can generate, analyse, or modify. R is a very high-level language where all operations are functions, and all functions are data that can be manipulated. There is great flexibility in how function calls and expressions are evaluated, and by exploiting this, we can create small domain-specific languages to extend R within the R language itself.
+This book gives an introduction to meta-programming. Meta-programming is when you write programs manipulating other programs: you treat code as data that you can generate, analyse, or modify. R is a very high-level language where all operations are functions, and all functions are data that can be manipulated. Functions are objects and you can, within the language, extract their components, modify them, or create new functions from their constituent components.
 
-In this book, you will learn how to manipulate functions and how to evaluate expressions in non-standard ways. 
+There is great flexibility in how function calls and expressions are evaluated. The lazy evaluation semantics of R means that arguments to functions are passed as unevaluated expressions and these expressions can be modified before they are evaluated or they can be evaluated in other environments than the context where a function is called. This can be exploited to create small domain-specific languages and is a key component in the "tidy verse" in packages such as `dplyr` or `ggplot2` where expressions are evaluated in contexts defined by data frames.
+
+There is some danger in modifying how the language evaluates function calls and expressions, of course. It makes it harder to reason about code. On the other hand, adding small embedded languages for dealing with common programming tasks adds expressiveness to the language that far outweighs the risks of programming confusion, as long as such meta-programming is used sparingly and in well-understood (and well documented) frameworks.
+
+In this book, you will learn how to manipulate functions and expressions, and how to evaluate expressions in non-standard ways. Prerequisites for reading this book are familiarity with functional programming, at least familiarity with higher-order functions, that is, functions that take other functions as input or that return functions, and some familiarity with classes and generic functions.
+
