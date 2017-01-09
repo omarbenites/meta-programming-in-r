@@ -103,9 +103,7 @@ eval(body(f), formals(f))
 Things get a little more complicated if default parameters refer to each other. This has to do with the evaluation environment is set up and not so much with how expressions are evaluated, but consider an example where one default parameter refers to another. 
 
 ```{r}
-f <- function(x = y, y = 5) {
-  x + y
-}
+f <- function(x = y, y = 5) x + y
 ```
 
 Both parameters have default values so we can call `f` without any arguments.
@@ -133,9 +131,7 @@ Since all the promises are unevaluated expressions we don't have to worry about 
 Don't make circular dependencies. Don't do something like this:
 
 ```{r}
-g <- function(x = 2*y, y = x/2) {
-  x + y
-}
+g <- function(x = 2*y, y = x/2) x + y
 ```
 
 We can try to make a similar setup for `f` where we build an environment of its formals as promises. We can use the function `delayedAssign` to assign values to promises like this:
@@ -157,7 +153,15 @@ The environment of a function is the simplest of its components. It is just the 
 
 ## Calling a function
 
-...what happens when you call a function...
+Before we continue, it might be worthwhile to see how these components fit together when a function is called. I explained this in some detail in *Functional Programming in R* but it is essential to know in order to understand how expressions are evaluated. When we start to fiddle around with non-standard evaluation it becomes even more important. So it bears repeating.
+
+When expressions are evaluated, they are evaluated in an environment. Environments are chained in a tree-structure. Each environment has a "parent," and when R needs to look up a variable, it first look in the current environment to see if that environment holds the variable. If it doesn't, R will look in the parent. If it doesn't find it there either, it will look in the grandparent, and it will continue going up the tree until it either finds the variable or hits the global environment and see that it isn't there, at which point it will raise an error. We call the variables an expression can find by searching this way its scope. Since the search always picks the first place it finds a given variable, local variables overshadow global variables, and while several environments on this parent-chain might contain the same variable name, only the inner-most environment, the first we find, will be used.
+
+When a function, `f`, is created, it gets associated `environment(f)`. This environment is the environment where `f` is defined.  When `f` is invoked, R creates an evaluation environment for `f`, let's call it `evalenv`. The parent of `evalenv` is set to `environment(f)`. Since `environment(f)` is the environment where `f` is defined, having it as the parent of the evaluation environment means that the body of `f` can see its enclosing scope if `f` is a closure.
+
+After the evaluation environment is created, the formals of `f` are added to it as promises. As we saw in the quote from the language definition earlier, there is a difference between default parameter and parameters given to the function where it is called in how these promises are set up. Default parameters will be promises that should be evaluated in the evaluation scope, `evalenv`. This means they can refer to other local variables or formal parameters, since these will be put in `evalenv`, and since `evalenv`'s parent is `environment(f)`, these promises can also refer to variables in the scope where `f` was defined. Expressions given to `f` where it is called, however, will be stored as promises that should be called in the calling environment. Let's call that `callenv`. If they were evaluated in the `evalenv` they would not be able to refer to variables in the scope were we call `f`, only local variables or variables in the scope were `f` was defined.
+
+We can see it all in action in the example below:
 
 ```{r}
 enclosing <- function() {
@@ -175,23 +179,51 @@ calling <- function() {
 }
 
 calling()
+```
 
+We start out in the global environment where we define `enclosing` to be a function. When we call `enclosing` we create an evaluation environment in which we store the variable `z` and then return a function which we store in the global environment as `f`. Since this function was defined in the evaluation environment of `enclosing`, this environment is the `environment` of `f`.
 
+Then we create `calling` and store that in the global environment and call it. This create, once again, an evaluation environment. In this we store the variable `w` and then call `f`. We don't have `f` in the evaluation environment, but because the parent of the evaluation environment is the global environment we can find it. When we call `f` we give it the expression `2 * w` as parameter `x`.
+
+Inside the call to `f` we have another evaluation environment. Its parent is the closer we got from `enclosing`. Here we need to evaluate `f`'s body: `x + y + z`, but before that the evaluation environment needs to be set up. Since `x` and `y` are formal parameters, they will be stored in the evaluation environment as promises. We provided `x` as a parameter when we called `f`, so this promise must be evaluated in the calling environment -- the environment inside `calling` -- while `y` has the default value so it must be evaluated in the evaluation environment. In this environment it can see `x` and `y` and through the parent environment `z`. We evaluate `x`, which is the expression `2 * w` in the calling environment, where `w` is known and `y` in the local environment where `x` is know, so we can get the value of those two variables, and then from the enclosing environment `z`.
+
+We can try to emulate all this using explicit environments and `delayedAssign` to store promises. We need three environments since we don't actually need to simulate the global environment for this. We need the environment where the `f` function was defined, we call it `defend`, then we need the evaluating environment for the call to `f`, and we need the environment in which `f` is called.
+
+```{r}
 defenv <- new.env()
 evalenv <- new.env(parent = defenv)
 callenv <- new.env()
+```
 
+Here, `defenv` and `calling` have the global environment as their parent, but we don't worry about that. The evaluating environment has `defend` as its parent.
+
+In the definition environment we save the value of `z`:
+
+```{r}
 defenv$z <- 2
-defenv$f <- function(x, y = x) x + y + z
+```
 
+In the calling environment we save the value of `w`:
+
+```{r}
 callenv$w <- 5
+```
 
+In the evaluation environment we set up the promises. The `delayedAssign` function takes two environments as arguments. The first is the environment where the promise should be evaluated and the second where it should be stored. For `x` we want the expression to be evaluated in the calling environment and for `y` we want it to be evaluated in the evaluation environment. Both variables should be stored in the evaluation environment.
+
+```{r}
 delayedAssign("x", 2 * w, callenv, evalenv)
 delayedAssign("y", x, evalenv, evalenv)
-evalenv$y
-
-eval(body(defenv$f), evalenv)
 ```
+
+In the `evalenv` we can now evaluate `f`:
+
+```{r}
+f <- function(x, y = x) x + y + z
+eval(body(f), evalenv)
+```
+
+There is surprisingly much going on behind a function call, but it all follows these rules for how arguments are passed along as promises.
 
 
 ## Modifying functions
