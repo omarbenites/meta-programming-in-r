@@ -90,7 +90,7 @@ It fails because we do not have a variable `x` defined anywhere. If we had a glo
 eval(body(f), list(x = 2))
 ```
 
-The `eval` function evaluates an expression and use the second argument to look up parameters. You can give it an environment, and the expression will then be evaluated in it, or you can use a list. We cover how to work with expressions and how to evaluate them in the next chapter; for now all you have to know is that we can evaluate an expression using `eval` if the variables in the expression are either found in the scope where we call `eval` or provided in the second argument to `eval`.
+The `eval` function evaluates an expression and use the second argument to look up parameters. You can give it an environment, and the expression will then be evaluated in it, or you can use a list. We cover how to work with expressions and how to evaluate them in the *[Expressions and environments]* chapter; for now all you have to know is that we can evaluate an expression using `eval` if the variables in the expression are either found in the scope where we call `eval` or provided in the second argument to `eval`.
 
 We can also set `x` as a default parameter and use that when we evaluate the expression:
 
@@ -146,6 +146,7 @@ eval(body(f), fenv)
 ```
 
 Here we assign the expression `y` to variable `x` and the value 5 to variable `y`. Basic values like a numeric vector are not handled as unevaluated expressions. They could be, but there is no point. So before we evaluate the body of `f` the environment has `y` pointing to 5 and `x` pointing to the expression `y`, wrapped as a promise that says that the expression should be evaluated in `fend` when we need to know the value of `y`.
+
 
 ### Function environments
 
@@ -228,26 +229,226 @@ There is surprisingly much going on behind a function call, but it all follows t
 
 ## Modifying functions
 
+We can do more than just inspect functions. The three functions for inspecting also come in assignment versions and we can use those to change the three components of a function. If we go back to our simple definition of `f`
+
+```{r}
+f <- function(x) x
+f
+```
+
+we can try modifying its formal arguments by setting a default value for `x`.
+
 ```{r}
 formals(f) <- list(x = 3)
 f
-eval(body(f), formals(f))
+```
 
-body(f) <- 6
+where, with a default value for `x`, we can evaluate its body in the environment of its formals.
+
+```{r}
+eval(body(f), formals(f))
+```
+
+I will stress again, though, that evaluating a function is not quite as simple as evaluating its body in the context of its formals. It doesn't matter that we change a function's formal arguments outside of its definition, when the function is invoked the formal arguments will still be evaluated in the context where the function was defined.
+
+If we define a closure we can see this in action.
+
+```{r}
+nested <- function() {
+  y <- 5
+  function(x) x
+}
+f <- nested()
+```
+
+Since `f` was defined inside the evaluating environment of `nested`, its `environment(f)` will be that environment. When we call it, it will therefore be able to see the local variable `y` from `nested`. It doesn't refer to that, but we can change this by modifying its formals
+
+```{r}
+formals(f) <- list(x = quote(y))
 f
-eval(body(f))
+```
 
-f()
-f(x = 12)
+Here, we have to use the function `quote` to make `y` a name. If we didn't, we would get an error or we would get a reference to a `y` in the global environment. In function definitions, default arguments are automatically quoted to turn them into expressions, but when we modify `formals` we have to do this explicitly.
 
-f <- function(x = y, y = 2) y*x
-f()
+If we now call `f` without arguments, `x` will take its default value as specified by `formals(f)`, that is, it will refer to `y`. Since this is a default argument it will be turned into a promise that will be evaluated in `f`'s evaluation environment. There is no local variable named `y` so R will look in `environment(f)` for `y` and find it inside the `nested` environment.
 
-eval(body(f), formals(f))
-
-formals(f) <- list(x = 3, y = quote(x))
+```{r}
 f()
 ```
 
+Just because we modified `formals(f)` in the global environment we do not change in which environment R evaluates promises for default parameters. If we have a global `y`, the `y` in `f`'s formals still refer to the one in `nested`.
+
+```{r}
+y <- 2
+f()
+```
+
+Of course, if we actually provide `y` as a parameter when calling `f` things change. Now it is will be a promise that should be evaluated in the calling environment, so in that case we get a reference to the global `y`.
+
+```{r}
+f(x = y)
+```
+
+We can modify the body of `f` as well. Instead of having its body refer to `x` we can, for example, make it return the constant 6:
+
+```{r}
+body(f) <- 6
+f
+```
+
+Now it evaluates that constant six when we call it, regardless of what `x` is.
+
+```{r}
+f()
+f(x = 12)
+```
+
+We can also try making `f`'s body more complex and make it an actual expression.
+
+```{r}
+body(f) <- 2 * y
+f()
+```
+
+Here, however, we don't get quite what we want. We don't want the body of a function to be evaluated before we call the function, but when we assign an expression like this we *do* evaluate it before we assign. There is a limit to how far lazy evaluation goes. Since `y` was 2, we are in effect setting the body of `f` to 4. Changing `y` afterwards doesn't change this.
+
+```{r}
+y <- 3
+f()
+```
+
+To get an unevaluated body we must, again, use `quote`.
+
+```{r}
+body(f) <- quote(2 * y)
+f
+```
+
+Now, however, we get back to the semantics for function calls which means that the body is evaluated in an evaluation environment which parent is the environment inside `nested`, so `y` refers to the local and not the global parameter.
+
+```{r}
+f()
+y <- 2
+f()
+```
+
+We can change `environment(f)` if we want to make `f` use the global `y`:
+
+```{r}
+environment(f) <- .GlobalEnv
+f()
+y <- 3
+f()
+```
+
+If we do this, though, it will no longer know about the environment inside `nested`. It takes a lot of environment hacking if you want to pick and choose which environments a function finds its variables in, and if that is what you want you are probably better off rewriting the function to get access to variables in other ways.
+
+If you want to set the formals of a function to missing values, that is, you want them to be parameters without default values, then you need to use `list` to create the arguments.
+
+If we define a function `f` like this:
+
+```{r}
+f <- function(x) x + y
+```
+
+it takes one parameter, `x`, and add it to a global parameter `y`. If, instead, we want `y` to be a parameter, but not give it a default value, we could try something like this:
+
+```r
+formals(f) <- list(x =, y =)
+```
+
+This will not work, however, because `list` doesn't like empty values. Instead, you can use `alist`. This function creates a pair-list, a data structure used internally in R for formal arguments. It is the only thing this data structure is really used for, but if you start hacking around with modifying parameters of a function, it is the one to use.
+
+```{r}
+formals(f) <- alist(x =, y =)
+```
+
+Using `alist`, expressions are also automatically quoted. In the example above where we wanted the parameter `x` to default to `y` we needed to use `quote(y)` to keep `y` as a promise to be evaluated in `environment(f)` rather than the calling scope. With `alist`, we do not have to quote `y`.
+
+```{r}
+nested <- function() {
+  y <- 5
+  function(x) x
+}
+f <- nested()
+formals(f) <- alist(x = y)
+f
+f()
+```
 
 ## Constructing functions
+
+We can also construct new functions by piecing together their components. The function to use for this is `as.function`. It takes an `alist` as input and interprets the last element in it as the new function's body and the rest as the formal arguments.
+
+```{r}
+f <- as.function(alist(x =, y = 2, x + y))
+f
+f(2)
+```
+
+Don't try to use a `list` here; it doesn't do what you want.
+
+```r
+f <- as.function(list(x = 2, y = 2, x + y))
+```
+
+If you give `as.function` a list it interprets that as just an expression that then becomes the body of the new function. Here, if you have global definitions of `x` and `y` so you can evaluate `x + y`, you would get a body that is `c(2, 2, x+y)` where `x+y` refers to the value, not the expression, of the sum of global variables `x` and `y`.
+
+The environment of the new function is by default the environment in which we call `as.function`. So to make a closure, we can just call `as.function` inside another function. 
+
+```{r}
+nested <- function(z) {
+  as.function(alist(x =, y = z, x + y))
+}
+(g <- nested(3))
+(h <- nested(4))
+```
+
+Here we call `as.function` inside `nested`, so the `environment` of the functions created here will know about the `z` parameter of `nested` and be able to use it in the default value for `y`.
+
+Don't try this:
+
+```{r}
+nested <- function(y) {
+  as.function(alist(x =, y = y, x + y))
+}
+```
+
+Remember that expressions that are default parameters are lazy evaluated inside the body of the function we define. Here, we say that `y` should evaluate to `y` which is a circular dependency. It has nothing to do with `as.function`, really, you have the same problem in this definition:
+
+```{r}
+nested <- function(y) {
+  function(x, y = y) x + y
+}
+```
+
+If you want something like that, where you make a function with a given default `y`, and you absolutely want the created function to call that parameter `y`, you need to evaluate the expression in the nesting scope and refer to it under a different name to avoid the nesting function's argument to overshadow it.
+
+```{r}
+nested <- function(y) {
+  z <- y
+  function(x, y = z) x + y
+}
+nested(2)(2)
+```
+
+We can give an environment to `as.function` to specify the definition scope of the new function if we do not want it to be the current environment. In the example below we have two functions for constructing closures, the first create a function that can see the enclosing `z` while the other, instead, use the global environment, and is thus no closure at all, and so the argument `z` is not visible; instead the global `z` is.
+
+```{r}
+nested <- function(z) {
+  as.function(alist(x =, y = z, x + y))
+}
+nested2 <- function(z) {
+  as.function(alist(x =, y = z, x + y), 
+              envir = .GlobalEnv)
+}
+```
+
+If we evaluate functions created with these two functions, the `nested` one will add `x` to the `z` value we provide in the call to `nested` while the `nested2` will ignore its input and look for `z` in the global scope.
+
+```{r}
+z <- -1
+nested(3)(1)
+nested2(3)(1)
+```
+

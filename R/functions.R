@@ -100,3 +100,61 @@ delayedAssign("y", x, evalenv, evalenv)
 evalenv$y
 
 eval(body(defenv$f), evalenv)
+
+
+nested <- function() {
+  y <- 5
+  function(x) x
+}
+
+f <- nested()
+formals(f) <- list(x = quote(y))
+f
+
+f()
+
+f <- as.function(alist(x =, y = 2, x + y))
+f
+f(2)
+
+nested <- function(z) {
+  as.function(alist(x =, y = z, x + y))
+}
+g <- nested(3)
+g
+h <- nested(4)
+h
+
+g(2)
+h(2)
+
+nested <- function(y) {
+  as.function(alist(x =, y = y, x + y))
+}
+
+nested2 <- function(y) {
+  z <- y
+  function(x, y = z) x + y
+}
+nested2(2)(2)
+
+
+f <- function(x) x + y
+formals(f) <- list(x =, y =)
+formals(f) <- alist(x =, y =)
+
+
+f <- as.function(list(x = 2, y = 2, x + y))
+f
+f(2)
+
+
+nested <- function(z) {
+  as.function(alist(x =, y = z, x + y))
+}
+nested2 <- function(z) {
+  as.function(alist(x =, y = z, x + y), envir = .GlobalEnv)
+}
+z <- -1
+nested(3)(1)
+nested2(3)(1)
