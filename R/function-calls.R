@@ -43,8 +43,20 @@ f(x = 4:6)
 
 f <- function(x = 1:3) substitute(x)
 f()
+x <- 5
 f(5 * x)
 
+eval(f())
+eval(f(5 * x))
+x <- 2
+eval(f(5 * x))
+
+
+f <- function(x = 1:3, y = x) substitute(x + y)
+f()
+f(y = 5 * x)
+
+x <- 5
 eval(f())
 eval(f(5 * x))
 

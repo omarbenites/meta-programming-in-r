@@ -103,16 +103,63 @@ The `formals` give us the arguments as we gave them in the function definition, 
 
 If we actually want the arguments parsed to the current function in the form of the promises they are really represented as, we need to get hold of them without evaluating them. If we take an argument and use it as an expression, the promise will be evaluated. This goes for both default parameters and parameters provided in the function call; they are all promises that will be evaluated in different environments, but they are all promises nonetheless.
 
-One way to get the expression that the promises represent is to use the function `substitute`. This function, which we will get intimately familiar with in the chapter *[Manipulation of expressions]*, substitutes into an expression the values that variables refer to. 
+One way to get the expression that the promises represent is to use the function `substitute`. This function, which we will get intimately familiar with in the chapter *[Manipulation of expressions]*, substitutes into an expression the values that variables refer to. This means that variables are replaced by the verbatim expressions, the expressions are not evaluated before they are substituted into an expression.
+
+This small function illustrate how we can get the expression passed to a function:
 
 ```{r}
-f <- function(x, y, z) {
-  print(substitute(x))
-  print(substitute(y))
-  print(substitute(z))
-}
-f(2, 4, sin(2 + 4))
+f <- function(x = 1:3) substitute(x)
+f()
+```
 
+Here we see that calling `f` with default parameters gives us the expression `1:3` back. This is similar to the `formals` we saw earlier in the section. We substitute `x` with the expression it has in its formal arguments; we do not evaluate the expression. We can, of course, once we have the expression
+
+```{r}
+eval(f())
+```
+
+but it isn't done when we call `substitute`.
+
+```{r}
+f(5 * x)
+f(foo + bar)
+```
+
+Because the substituted expression is not evaluated, we don't even need to call the function with an expression that *can* be evaluated.
+
+```{r}
+f(5 + "string")
+```
+
+The substitution is verbatim. If we set up default parameters that depend on others, we just get them substituted with variable names; we do not get the value assigned to other variables.
+
+```{r}
+f <- function(x = 1:3, y = x) substitute(x + y)
+f()
+f(x = 4:6)
+f(y = 5 * x)
+```
+
+In this example, we we also see that we can call `substitute` with an expression instead of a single variable, we see that `x` gets replaced with the argument given to `x`, whether default or actual, and `y` gets replaced with `x` as the default parameter -- not the values we provide for `x` in the function call, and with the actual argument when we provide it.
+
+If we try to evaluate the expression we get back from the call to `f` we will not be evaluating it in the evaluation environment of `f`. That environment is not preserved in the substitution.
+
+```{r}
+x <- 5
+f(x = 5 * x)
+eval(f(x = 5 * x))
+```
+
+The expression we evaluate is `5 * x + x`, not `5 * x + 5 * x` as it would be if we substituted the value of `x` into `y`, as we would if we evaluated the expression inside the function.
+
+```{r}
+g <- function(x = 1:3, y = x) x + y
+g(x = 5 * x)
+```
+
+
+
+```{r}
 f <- function(x, y, z) {
   as.list(match.call())
 }
