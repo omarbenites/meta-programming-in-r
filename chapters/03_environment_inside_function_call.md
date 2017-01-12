@@ -157,16 +157,148 @@ g <- function(x = 1:3, y = x) x + y
 g(x = 5 * x)
 ```
 
+A common use for `substitute` is to get the expression provided to a function as a string. This is used in the `plot` function, for instance, to set the default labels of a plot to the expressions `plot` is called with. Here, `substitute` is used in combination with the `departs` function. This function takes an expression and translate it into its text representation.
 
+```{r}
+f <- function(x) {
+  cat(deparse(substitute(x)), "==", x)
+}
+f(2 + x)
+f(1:4)
+```
+
+Here, we use the `deparse(substitute(x))` pattern to get a textual representation of the argument `f` was called with, and the plain `x` to get it evaluated.
+
+The actual type of object returned by `substitute` depends on the expression we give the function and the expressions variables refer to. If the expression, after variables have been substituted, is a simple type, that is what `substitute` returns.
+
+```{r}
+f <- function(x) substitute(x)
+f(5)
+class(f(5))
+```
+
+If you give `substitute` a local variable you have assigned to, you also get a value back. This is not because `substitute` does anything special here; local variables like these are not promises, we have evaluated an expression when we assigned to one.
+
+```{r}
+f <- function(x) {
+  y <- 2 * x
+  substitute(y)
+}
+f(5)
+class(f(5))
+```
+
+This behaviour only works inside functions, though. If you call `substitute` in the global environment it considers variables as names and does not substitute them for their values.
+
+```{r}
+x <- 5
+class(substitute(5))
+class(substitute(x))
+```
+
+It will substitute variables for values if you give a function a simple type as argument.
+
+```{r}
+f <- function(x, y = x) substitute(y)
+f(5)
+class(f(5))
+f(5, 5)
+class(f(5, 5))
+```
+
+If the expression that `substitute` evaluates to is a single variable, the type it returns is `name`, as we just saw. For anything more complicated, `substitute` will return a `call` object. Even if it is an expression that could easily be evaluated to a simple value; `substitute` does not evaluate expressions, it just substitute variables.
+
+```{r}
+f <- function(x, y) substitute(x + y)
+f(5, 5)
+class(f(5, 5))
+```
+
+A `call` object refers to an unevaluated function call. In this case, we have the expression `5 + 5`, which is the function call `` `+`(5, 5) ``.
+
+Such `call` objects can also be manipulated. We can translate a `call` into a list to get its components and we can evaluate it to invoke the actual function call.
+
+```{r}
+my_call <- f(5, 5)
+as.list(my_call)
+eval(my_call)
+```
+
+Since `substitute` doesn't actually evaluate a call, we can create function call objects with variables we can later evaluate in different environments.
+
+```{r}
+rm(x) ; rm(y)
+my_call <- f(x, y)
+as.list(my_call)
+```
+
+Here, we have created the call `x + y`, but removed the global variables `x` and `y`, so we cannot actually evaluate the call.
+
+```{r}
+eval(my_call)
+```
+
+We can, however, provide the variables when we evaluate the call
+
+```
+eval(my_call, list(x = 5, y = x))
+```
+
+or we can set global variables and evaluate the call in the global environment.
+
+```{r}
+x <- 5; y <- 2
+eval(my_call)
+```
+
+We can treat a `call` as a list and modify it. The first element in a `call` is the function we will call, and we can replace it like this:
+
+```{r}
+(my_call <- f(5, 5))
+my_call[[1]] <- `-`
+eval(my_call)
+```
+
+The remaining elements in the `call` are the arguments to the function call, and we can modify these as well:
+
+```{r}
+my_call[[2]] <- 10
+eval(my_call)
+```
+
+You can also create `call` objects manually using the `call` function. The first argument to `call` is the name of the function to call, and any additional arguments are parsed on this function when the `call` object is evaluated.
+
+```{r}
+(my_call <- call("+", 2, 2))
+eval(my_call)
+```
+
+Unlike `substitute` inside a function, however, the arguments to `call` *are* evaluated when the call object is constructed. These are not lazy-evaluated.
+
+```{r}
+(my_call <- call("+", x, y))
+(my_call <- call("+", x - y, x + y))
+```
+
+From inside a function, you can get the call used to invoke it using the `match.call` function.
 
 ```{r}
 f <- function(x, y, z) {
-  as.list(match.call())
+  match.call()
 }
-f(2, 4, sin(2 + 4))
-g <- f
-g(2, 4, sin(2 + 4))
+(my_call <- f(2, 4, sin(2 + 4)))
+as.list(my_call)
 ```
+
+From the first element in this call you can get the name of the function as it was actually called. Remember that the function itself doesn't have a name, but in the call to the function we have a reference to it, and we can get hold of that reference through the `match.call` function.
+
+```{r}
+g <- f
+(my_call <- g(2, 4, sin(2 + 4)))
+my_call[[1]]
+```
+
+This function is often used to remember a function call in statistical models, where the call to the model constructor is saved together with the fitted model.
 
 ## Accessing the calling scope
 
