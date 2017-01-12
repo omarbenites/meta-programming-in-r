@@ -101,8 +101,9 @@ f(x = 4:6)
 
 The `formals` give us the arguments as we gave them in the function definition, where `x` is set to the expression `1:3`. It is a *promise*, to be evaluated in the defining scope when we access `x` in the cases where no parameters were provided in the function call, so in the `formals` list it is not the values 1, 2, and 3, but the expression `1:3`. In the actual call, though, we *have* provided the `x` parameter, so what this function call returns is `4:6`, but because we return it as the result of an expression this promise is evaluated so `f` returns 4, 5, and 6.
 
+If we actually want the arguments parsed to the current function in the form of the promises they are really represented as, we need to get hold of them without evaluating them. If we take an argument and use it as an expression, the promise will be evaluated. This goes for both default parameters and parameters provided in the function call; they are all promises that will be evaluated in different environments, but they are all promises nonetheless.
 
-
+One way to get the expression that the promises represent is to use the function `substitute`. This function, which we will get intimately familiar with in the chapter *[Manipulation of expressions]*, substitutes into an expression the values that variables refer to. 
 
 ```{r}
 f <- function(x, y, z) {
