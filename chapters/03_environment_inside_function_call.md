@@ -302,3 +302,170 @@ This function is often used to remember a function call in statistical models, w
 
 ## Accessing the calling scope
 
+Inside a function, expressions are evaluated in the scope defined evaluating environment and its parent environment, the environment where the the function was defined, except for promises provided in the function call, which are evaluated in the calling scope. If we want direct access to the calling environment, inside a function, we can get hold of it using the function `parent.frame`.
+
+We can see this in action in this function:
+
+```{r}
+nested <- function(x) {
+  function(local) {
+    if (local) x
+    else get("x", parent.frame())
+  }
+}
+```
+
+We have a function, `nested`, whose local environment knows the value of the parameter `x`. Inside it, we create and return a function that, depending on its argument, either return the value of argument to `nested` or looks for `x` in the scope where the function is called.
+
+```{r}
+f <- nested(2)
+f(TRUE)
+x <- 1
+f(FALSE)
+```
+
+In the first call to `f` we get the local value of `x`, the number two, and in the second call to `f` we bypass the local scope and instead find `x` in the calling scope, which in this case is the global environment, where we find that `x` has the value one.
+
+In a slightly more complex version, we can try evaluating an expression in either the local evaluating environment or in the calling scope:
+
+```{r}
+nested <- function(x) {
+  y <- 2
+  function(local) {
+    z <- 2
+    expr <- expression(x + y + z)
+    if (local) eval(expr)
+    else eval(expr, envir = parent.frame())
+  }
+}
+```
+
+The logic is basically the same as the previous function, except in this function we define an expression and use `eval` to evaluate it either in the local or the calling scope. We need to create the expression using the `expression` function; if we did not, the expression would be evaluated (in the local scope) before `eval` gets to it. As the function is defined, we can explicitly choose which environment to use when we evaluate the expression.
+
+```{r}
+f <- nested(2)
+x <- y <- z <- 1
+f(TRUE)
+f(FALSE)
+```
+
+As a last example, we get a bit more inventive with what we can do with scopes, variables, and expressions. We want to write a function that lets us assign several variables at once from an expression, such a function call, that returns a sequence of values. Rather than having to write
+
+```r
+x <- 1
+y <- 2
+z <- 3
+```
+
+we want to be able to write
+
+```r
+bind(x, y, z) <- 1:3
+```
+
+and get the same effect. We can't *quite* get there because of how R deal with replacement functions, as it would interpret this expression to be, but we can modify the assignment operator to our own infix function `` `%<-%` `` and get
+
+```r
+bind(x, y, z) %<-% 1:3
+```
+
+Maybe not the prettiest syntax, but good enough for an example. But we can get even more ambitions and have this `bind` function assign to variables based on expressions so
+
+```r
+bind(x, y = 2 * x, z = 3 * x) %<-% 2
+```
+
+assigns 2 to `x`, 4 to `y`, and 6 to `z`. The first because it is a positional parameter and the other two because we give them as expressions that can be evaluated once we know `x`.
+
+To implement this syntax, we need to define the `bind` function and the `%<-%` operator. Of these two, the `bind` function is the simplest:
+
+```{r}
+bind <- function(...) {
+  bindings <- eval(substitute(alist(...)))
+  scope <- parent.frame()
+  structure(list(bindings = bindings, scope = scope), 
+            class = "bindings")
+}
+```
+
+We use the `eval(substitute(alist(...)))` expression to get all the function's arguments into a pair-list without evaluating any potential expressions. We want to preserve lazy evaluation because expressions provided as arguments cannot be evaluated before we try to assign to variables we bind. Using `eval(substitute(alist(...)))` we can achieve this. The `substitute` call puts the actual arguments of the function into the expression `alist(...)` and when we then evaluate this expression we get the pair-list. The scope where we should bind variables we get from `parent.frame`, and we then just combine the bindings and the scope in a class we call `"bindings"`. We don't really need to make it into a class, but it doesn't hurt so we might as well.
+
+The real work is done in the `%<-%` operator. Here, we need to do several things. We need to figure out which of the parameter bindings are just names, where we should assign values based on their position, and which are expressions that we need to evaluate. Positional parameters we can just assign a value and then store them in the scope we remembered in the bindings. Expressions should both have a name and an expression -- we cannot assign to an actual expression in any scope, so we need these expressions to be named parameters -- and the expression we need to evaluate. If expressions refer to other parameters we name in the `bind` call, they need to know what those are, so we need to evaluate the expressions in a scope given by `bind`, but if the values we are assigning to the expressions have names we also want to be able to refer to them, for example to write an assignment like this:
+
+```r
+bind(y = 2 * x, z = 3 * x) %<-% c(x = 4)
+```
+
+To achieve this, we can make the values into an environment and make the parent scope of `bind` the parent of this environment as well. This way, they can refer to variables both in the values we assign and variables we assign to in the binding. The only tricky part about having expressions refer to other parameters we define is then the order in which to evaluate the expressions. For an expression to be evaluated, all the variables it refer to must be assigned to first. So it seems we would need to parse the expressions and figure out an order, a topological sorting of the expressions based on which variables are used in which expressions, but we can instead steal a trick from how functions evaluate arguments: lazy evaluation. If, instead of assigning a value to each parameter we assign a promise, we won't have to worry about the order in which we assign the variables. R will handle this order whenever it sees a reference to any of these promises. This would mean that if we modify one of the assigned variables before we access another, we could get the lazy evaluation behaviour of functions. For example, if we did this:
+
+```r
+bind(y = 2 * z, z = 3 * x) %<-% c(x = 4)
+z <- 5
+```
+
+then `y` would refer to 10 and not 24. To avoid this problem, we can force evaluation of all the expressions once we are done with assigning them all.
+
+The entire function is this:
+
+```{r}
+.unpack <- function(x) unname(unlist(x, use.names = FALSE))[1]
+`%<-%` <- function(bindings, value) {
+  
+  var_names <- names(bindings$bindings)
+  val_names <- names(value)
+  has_names <- which(nchar(val_names) > 0)
+  value_env <- list2env(as.list(value[has_names]),
+                        parent = bindings$scope)
+  
+  for (i in seq_along(bindings$bindings)) {
+    name <- var_names[i]
+    if (length(var_names) == 0 || nchar(name) == 0) {
+      # we don't have a name so the expression 
+      # should be a name and we are
+      # going for a positional value
+      variable <- bindings$bindings[[i]]
+      if (!is.name(variable)) {
+        stop(paste0("Positional variables cannot be expressions ",
+                     deparse(variable), "\\n"))
+      }
+      val <- .unpack(value[i])
+      assign(as.character(variable), val, envir = bindings$scope)
+      
+    } else {
+      # if we have a name we also have an expression
+      # and we evaluate that in the
+      # environment of the value followed by the 
+      # enclosing environment and assign
+      # the result to the name.
+      assignment <- substitute(delayedAssign(name, expr, 
+                                             eval.env = value_env,
+                                             assign.env = bindings$scope),
+                               list(expr = bindings$bindings[[i]]))
+      eval(assignment)
+    }
+  }
+  
+  # force evaluation of variables to get rid of the lazy
+  # promises.
+  for (name in var_names) {
+    if (nchar(name) > 0) force(bindings$scope[[name]])
+  }
+}
+```
+
+and it works as intended.
+
+```{r}
+bind(x, y, z) %<-% 1:3
+c(x, y, z)
+
+bind(y = 2 * x, z = 3 * x) %<-% c(x = 4)
+c(y, z)
+
+bind(y = 2 * z, z = 3 * x) %<-% c(x = 4)
+c(y, z)
+```
+
+The only really complicated part of it is how we handle the lazy assignment. We need to use `delayedAssign` for this, and we need the evaluation environment to be the environment that includes the values and the assignment environment to be the one we stored in the `bind` function. The difficult bit is getting the expression to evaluate into this function. We cannot evaluate it, that is what we are actively trying to avoid, so we need to give it as an expression. This expression, however, will not be evaluated until later, and in a different scope, so we cannot simply use the `bindings$bindings` list for the expression. We need to substitute the expression into an expression for the entire assignment and then evaluate it. The `eval(substitute(...))` pattern is how we can achieve this; in this function it is split over two lines for readability, but it is the simple trick of using substitute to get an expression into another expression and then evaluating it.
+
+If this whole exercise in expressions, substitutions, and evaluation makes your head spin, then take a deep breath and read on. We will have a deeper look at this in the next two chapters.
