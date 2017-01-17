@@ -335,7 +335,7 @@ f()
 We can change `environment(f)` if we want to make `f` use the global `y`:
 
 ```{r}
-environment(f) <- .GlobalEnv
+environment(f) <- globalenv()
 f()
 y <- 3
 f()
@@ -440,7 +440,7 @@ nested <- function(z) {
 }
 nested2 <- function(z) {
   as.function(alist(x =, y = z, x + y), 
-              envir = .GlobalEnv)
+              envir = globalenv())
 }
 ```
 
