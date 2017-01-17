@@ -226,6 +226,9 @@ eval(my_call)
 
 Since `substitute` doesn't actually evaluate a call, we can create function call objects with variables we can later evaluate in different environments.
 
+```{r, echo=FALSE}
+x <- y <- NULL
+```
 ```{r}
 rm(x) ; rm(y)
 my_call <- f(x, y)

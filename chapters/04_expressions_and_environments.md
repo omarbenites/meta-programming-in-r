@@ -73,20 +73,47 @@ baseenv()
 
 The environment of `ls` is a namespace defined by the `base` package. The `baseenv()` environment is how this package is exported into the environment below the global environment, making base functions available to you, outside of the `base` package. 
 
-Having such extra environments is how packages manage to have private functions within a package, and have other functions that are exported to users of a package. The base package is special in only defining two environments, the namespace for the package and the package environment. All other packages actually have three packages set up in their environment chain before the global environment: the package namespace, a namespace containing imported symbols, and then the base environment, which, as we just saw, connects to the global environment.
+Having such extra environments is how packages manage to have private functions within a package, and have other functions that are exported to users of a package. The base package is special in only defining two environments, the namespace for the package and the package environment. All other packages actually have three packages set up in their environment chain before the global environment: the package namespace, a namespace containing imported symbols, and then the base environment, which, as we just saw, connects to the global environment. A graph of environments when three packages are loaded, `MASS`, `stats` and `graphics`, is shown in +@fig:environment-graph (here `graphics` was loaded first, then `stats` and then `MASS`, so `MASS` appears first, followed by `stats` and then `graphics` on the path from the global environment to the base environment). The solid arrows indicate parent pointers for the environments and the dashed arrows indicate from which package symbols are exported into package environments.
 
-**FIXME: figure**
+![Environment graph with three loaded packages: `MASS`, `stats`, and `graphics`.](figures/environment-graph){#fig:environment-graph}
 
-If you try to access a package starting in the global environment, then you only get access to the exported functions, and some of these might be overshadowed by other packages you have loaded. For functions defined inside the package, their parent environment contains all the functions (and other variables) defined in the package, and because this package namespace environment sits before the global environment in the chain, variables from other packages do not overshadow variables inside the package when we execute functions from the package.
+If you try to access a symbol from a package, starting in the global environment, then you only get access to the exported functions, and some of these might be overshadowed by other packages you have loaded. For functions defined inside the package, their parent environment contains all the functions (and other variables) defined in the package, and because this package namespace environment sits before the global environment in the chain, variables from other packages do not overshadow variables inside the package when we execute functions from the package.
 
-If a package imports other packages, these goes into the import environment, below the package namespace and before the base environment. So functions inside a package can see imported symbols, but only if they aren't overshadowed inside the package. If a user of the package imports other packages, these cannot overshadow any symbols the package functions can see, since such imports come later in the environment chain, as seen from inside the package. After the imports environment comes the base namespace. This gives all packages access to the basic R functionality, even if some of it should be overshadowed as seen from the global environment.
+If a package imports other packages, these goes into the import environment, below the package namespace and before the base environment. So functions inside a package can see imported symbols, but only if they aren't overshadowed inside the package. If a user of the package imports other packages, these cannot overshadow any symbols the package functions can see, since such imports come later in the environment chain, as seen from inside the package. After the imports environment comes the base namespace. This gives all packages access to the basic R functionality, even if some of it should be overshadowed as seen from the global environment.[^depends-vs-imports] 
+
+[^depends-vs-imports]: 
+
+	Strictly speaking, there is a lot more to importing other packages than what I just explained here. Since this book is not about R packages, I will only give a very short explanation in this footnote.
+
+	There are three ways of specifying that a package depends on anther in the `DESCRIPTION` file: Using `Suggests:`, `Depends:`, and `Imports:`. The first doesn't actually set up any dependencies; it is just a suggestion of other packages that might enhance the functionality of the one being defined. 
+	
+	The packages specified in the `Depends:` directive will be loaded into the `search` path when you load the package. For packages specified here, you will clutter up the global namespace---not the global environment, but the search path below it---and you risk that functions you depend on will be overshadowed by packages that are loaded into the global namespace later. You should avoid using `Depends:` when you can, for these reasons.
+	
+	Using `Imports:` you just require that a set of other packages are installed before your own package can be installed. Those packages, however, are not put on the search path, nor are they imported in the `imports` environment. Using `Imports:` just enable you to access functions and data in another package using the package namespace prefix, so if you `Imports:` the `stats` package you know you can access `stats::sd` because that function is guaranteed to exist on the installation when your package is used.
+	
+	Actually importing variables into the `imports` namespace, you need to modify the `NAMESPACE` file, using the directives `imports()`, `importFrom()`, `importClassesFrom()`, or `importMethodsFrom()`. The easiest way to handle the `NAMESPACE` file, though, is using `Roxygen`, and here you can import names using `@importFrom <package> <name>` for a single function, `@import <package>` for the entire package, and `@importClassesFrom <package> <classes>` and `@importMethodsFrom <package> <methods>` for S4 classes.
+	
+	To ensure that packages you write play well with other namespaces you should use `Imports:` for dependencies you absolutely need (and `Suggests:` for other dependencies) and either use the package prefixes for dependencies in other packages or import the dependencies in the `NAMESPACE`.
+
+The function `sd` sits in the package `stats`. Its parent is `namespace:stats` and its grandparent is `imports:stats`, and its great grandparent is `namespace:base`. If we access `sd` from the global environment, though, we find it in `package:stats`. 
 
 ```{r}
-environment(MASS::mvrnorm)
-parent.env(environment(mvrnorm))
-parent.env(parent.env(environment(mvrnorm)))
-parent.env(parent.env(parent.env(environment(mvrnorm))))
+my_search(environment(sd))
+environment(sd)
+parent.env(environment(sd))
+parent.env(parent.env(environment(sd)))
+parent.env(parent.env(parent.env(environment(sd))))
 ``` 
 
+Figure @fig:environment-graph-functions-in-package shows how both `ls` and `sd` sits in package and namespace environments and how their parents are the namespace rather than the package environment.
+
+![Environment graph showing the positions of `stats::sd` and `base::ls`.](figures/environment-graph-functions-in-package){#fig:environment-graph-functions-in-package}
+
 As we now see, this simple way of chaining environments give us not only lexical scope in functions, it also explains how namespaces in packages work.
+
+## Environments and function calls
+
+
+
+## Environments and expression evaluation
 
