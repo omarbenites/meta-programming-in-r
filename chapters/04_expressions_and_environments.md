@@ -123,7 +123,71 @@ As we now see, this simple way of chaining environments give us not only lexical
 
 ## Environments and function calls
 
+How environments and package namespaces work together is interesting to understand, and might give you some inspiration for how namespaces can be implemented for other uses, but in day-to-day programming we are more interested in how environments and functions work together. So from now on, we are going to pretend that the scope graph ends at the global environment and focus on how environments are chained together when we define and call functions.
 
+We already know the rules for this: when we call a function we get an evaluation environment, its parent points to the environment in which the function was defined, and if we want the environment of the caller of the function we can get it using the `parent.frame` function. Just to test our knowledge, though, we should consider a more complex example of nested functions than we have done so far. Consider the code below at the point where we evaluate the `i(3)` call. Figure @fig:environment-graph-function-calls shows how environments are chained together; here solid lines indicate parent pointers and dashed lines are pointers from variables to their values. Figure @fig:environment-graph-function-calls-parent-frame adds the call stack as parent frame environments. Follow along on the figures while we go through the code.
+
+```r
+f <- function(x) {
+  g <- function(y, z) x + y + z
+  g
+}
+h <- function(a) {
+  g <- f(x)
+  i <- function(b) g(a + b, 5)
+}
+x <- 2
+i <- h(1)
+i(3)
+```
+
+![Environment graph for a complex example of nested functions.](figures/environment-graph-function-calls){#fig:environment-graph-function-calls}
+
+![Environment graph for a complex example of nested functions highlighting the call stack as we can get it with `parent.frame`.](figures/environment-graph-function-calls-parent-frame){#fig:environment-graph-function-calls-parent-frame}
+
+Ok, the first two statements in the code defines functions `f` and `h`. We don't call them, we just define them, so we are not creating any new environments. The environment associated to both functions is the global environment. Then we set `x` to two. Nothing interesting happens here either. When we call `h`, however, we start creating new evaluation environments. We first create one to evaluate `h` inside. This environment sets `a` to 1 since we called `h` with 1. It then calls `f` with `x`.
+
+Already here, it gets a little tricky. Since we call `f` with a variable, which will be lazy-evaluated inside `f`, we are not calling `f` with the value of the global parameter `x`. So `f` gets a promise it can later use to get a value for `x`, and this promise knows that `x` should be found in the scope of the `h` call we are currently evaluating. That `x` happens to be the global variable in this example, but you could assign to a local variable `x` inside `h` after you called `f` and then `f` would be using this local `x` instead. When we create a promise in a function call, the promise knows it should be evaluated in the calling scope, but it doesn't find any variables just yet; that only happens when the promise is evaluated.
+
+Inside the call to `f` we define the function `g` and then return it. Since `g` is defined inside the `f` call, its environment is set to the evaluation scope of the call. This will later let `g` know how to get a value for `x`. It doesn't store `x` itself, but it can find it in the scope of the `f` call, where it will find it to be a promise that should be evaluated in the scope of the `h` call, where it will be found to be the global variable `x`. It already looks very complicated, but whenever you need a value, you should just follow the parent environment chain to see where you will eventually find it.
+
+The `h(1)` call then defines a function, `i`, returns it, and we save that in the global variable `i`. The environment of this function is the evaluation scope of the `h(1)` call, so this is where the function will be looking for the names `a` and `g`.
+
+Now, finally, we call `i(3)`. This first creates an evaluation environment where we set the variable `b` to `3` since that is what the argument for `b` is. Then we find the `g` function, which is the closer we created earlier, and we call `g` with parameters `a+b` and 5. The 5 is just passed along as a number, we don't translate constants into promises, but the `a+b` will be lazy evaluated, so it is a promise in the call to `g`. Calling `g` we create a new evaluation environment for it. Inside this environment we store the variables `y` and `z`. The former is set to the promise `a+b` and the latter to `5`. Since promises should be evaluated where they are defined, here in the calling scope, this is stored together with the promise.
+
+We evaluate `g(a + b, 5)` as such: We first need to figure out what `x` is, so we look for it in the local evaluation environment, where we don't find it. Then we look in the parent environment where we do find it, but see that it is a promise from the `h(1)` environment so we have to look there for it now. It isn't there either, so we continue down the parent chain and find it in the global environment where it is 2. Then we need to figure out what `y` is. We can find `y` in the local environment where we see that it is a promise, `a+b`, that should be evaluated in the `i(3)` environment. Here we need to find `a` and `b`. We can find `b` directly in the environment, so that is easy, but `a` we need to search for in the parent environment. Here we find it, so we can evaluate `a+b` as `1+3`. This value now replaces the promise in `y`. Finally, we need to find `z`, but at least this is easy. That is just the number 5 stored in the local environment. We now have all the values we need to compute `x + y + z`, they are `2 + (1+3) + 5` so when we we return from the `i(3)` call we get the return-value 11.
+
+The environment graphs can get rather complicated, but the rules for finding values are quite simple. You just follow environment chains. The only pitfall that tends to confuse programmers is the lazy evaluation. Here, the rules are also simple, they are just not as familiar. Promises are evaluated in the scope where they are defined. So a default parameter will be evaluated in the environment where the function is defined and actual parameters will be evaluated in the calling scope. They will always be evaluated when you access a parameter, so if you don't want side-effects of modifying closure environments by changing variables in other scopes, you should use `force` before you create closures.
+
+Take some time to work through this example. Once you understand it, you understand how environments work. It doesn't get more complicated than this. Well, unless we start messing with the environments as we are wont to do...
+
+## Explicitly creating environments
+
+So how can we make working with environments even more complicated? We can, of course, start making our own in our programs and chain them up in all kinds of ways, adding even more environments to the scope graph.
+
+
+
+```{r}
+env <- new.env()
+x <- 5
+exists("x", env)
+get("x", env)
+env$x
+
+assign("x", 3, envir = env)
+env$x
+x
+```
+
+```r
+env <- new.env(parent = NULL) # This won't work!
+```
+
+```{r}
+env <- new.env(parent = emptyenv())
+exists("x", env)
+```
 
 ## Environments and expression evaluation
 
+Now, finally, we come to what this chapter is all about: how we combine expressions and environments to compute values. The good news is that it gets pretty simple after all of the stuff above.

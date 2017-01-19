@@ -305,7 +305,7 @@ This function is often used to remember a function call in statistical models, w
 
 ## Accessing the calling scope
 
-Inside a function, expressions are evaluated in the scope defined evaluating environment and its parent environment, the environment where the the function was defined, except for promises provided in the function call, which are evaluated in the calling scope. If we want direct access to the calling environment, inside a function, we can get hold of it using the function `parent.frame`.
+Inside a function, expressions are evaluated in the scope defined evaluating environment and its parent environment, the environment where the the function was defined, except for promises provided in the function call, which are evaluated in the calling scope. If we want direct access to the calling environment, inside a function, we can get hold of it using the function `parent.frame`.^[This is an unfortunate name since the `parent.frame` has nothing to do with the parent environment, which we get using the `parent.env` function. The "frame" refers to environments on the call stack, often called stack frames, while the parent environment refers to the parents in environments.]
 
 We can see this in action in this function:
 

@@ -23,20 +23,6 @@ baseenv()
 environment(ls)
 my_search(environment(ls))
 
-env <- new.env()
-x <- 5
-exists("x", env)
-get("x", env)
-env$x
-
-assign("x", 3, envir = env)
-env$x
-x
-
-#env <- new.env(parent = NULL)
-
-env <- new.env(parent = emptyenv())
-exists("x", env)
 
 f <- function() {
   g <- function() {
@@ -54,10 +40,17 @@ environment(sd)
 parent.env(environment(sd))
 parent.env(parent.env(environment(sd)))
 
-library(MASS)
-environment(mvrnorm)
-parent.env(environment(mvrnorm))
-parent.env(parent.env(environment(mvrnorm)))
 
-pryr::address(parent.env(parent.env(environment(sd))))
-pryr::address(parent.env(parent.env(environment(mvrnorm))))
+
+f <- function(x) {
+  g <- function(y, z) x + y + z
+  g
+}
+h <- function(a) {
+  g <- f(x)
+  i <- function(b) g(a + b, 5)
+}
+x <- 2
+i <- h(1)
+i(3)
+
