@@ -54,3 +54,82 @@ x <- 2
 i <- h(1)
 i(3)
 
+
+f <- function() {
+  my_env <- environment()
+  parent.env(my_env) <- parent.frame()
+  x
+}
+g <- function(x) f()
+g(2)
+
+f <- function() {
+  my_env <- environment()
+  call_env <- parent.frame()
+  
+  parent.env(my_env) <- call_env
+  parent.env(call_env) <- parent.frame(2)
+
+  x + y
+}
+g <- function(y) f() + a
+h <- function(x) {
+  a <- 1
+  g(2)
+}
+h(3)
+
+f <- function() {
+  my_env <- environment()
+  call_env <- parent.frame()
+  parent.env(my_env) <- call_env
+  y
+}
+g <- function(x) {
+  closure <- function(y) {
+    z <- f()
+    z + x
+  }
+  closure
+}
+add1 <- g(1)
+add2 <- g(2)
+
+x <- 3
+add1(3)
+add2(4)
+
+f <- function() {
+  my_env <- environment()
+  call_env <- parent.frame()
+  parent.env(my_env) <- call_env
+  parent.env(call_env) <- parent.frame(2)
+  y
+}
+
+rm(x)
+add1(3)
+add2(4)
+x <- 3
+add1(3)
+add2(4)
+
+
+
+
+
+make_dynamic_scope <- function(f) {
+  get_caller_chain <- function() {
+    n <- sys.nframe() # at least 2
+    print(n)
+    start <- new.env()
+    # start one extra frame down to search from caller...
+    for (i in seq(2,n)) {
+        
+    }
+    
+  }
+  wrapper <- function(...) {
+    
+  }
+}

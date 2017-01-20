@@ -161,11 +161,97 @@ The environment graphs can get rather complicated, but the rules for finding val
 
 Take some time to work through this example. Once you understand it, you understand how environments work. It doesn't get more complicated than this. Well, unless we start messing with the environments as we are wont to do...
 
+## Manipulating environments
+
+So how can we make working with environments even more complicated? We can, of course, start modifying them and and chaining them up in all kinds of new ways. You see, we can not only access environments and put variables in them, we can also modify the chain of parent environments. We can, for example, change the environment we execute a function in by changing the parent of the evaluation environment like this:
+
+```{r}
+f <- function() {
+  my_env <- environment()
+  parent.env(my_env) <- parent.frame()
+  x
+}
+g <- function(x) f()
+g(2)
+```
+
+We are not changing the local environment---that would be hard to do, you don't have anywhere to put values if you don't have that---but we are making its parent point to the function call rather than the environment where the function was defined. If we didn't mess with the parent environment, `x` would be searched for in the global environment, but because we set the parent environment to the parent frame, we will instead start the search in the caller where we find `x`.
+
+The power to modify scopes in this way can be used for good but definitely also for evil. There is nothing complicated in how it works; if you understood how environment graphs works from the previous section you will also understand how they work if we start changing parent pointers. The main problem is just that environments are mutable, so if you start modifying them one place it has consequences elsewhere.
+
+Consider this example of a closure:
+
+```{r}
+f <- function() {
+  my_env <- environment()
+  call_env <- parent.frame()
+  parent.env(my_env) <- call_env
+  y
+}
+g <- function(x) {
+  closure <- function(y) {
+    z <- f()
+    z + x
+  }
+  closure
+}
+add1 <- g(1)
+add2 <- g(2)
+```
+
+It is just a complicated way of writing a closure for adding numbers, but we are not going for elegance here---we aim to see how modifying environments can affect us. Here we have a function `f` that sets up its calling environment as its scope and then returns `y`. Since `y` is not a local variable it must be found in the enclosing scope with a search that starts in the parent environment; this is the environment we just changed to the calling scope. In the function `g` we then define a closure that takes one argument, `y`, and then calls `f` and adds `x` to the result of the call. Since `y` is a parameter of the closure, `f` will be able to see it when it searches from its (modified) parent scope. Since `x` is not local to the closure, it will be searched for in the enclosing scope, where it was a parameter of the enclosing function.
+
+It works as we would expect it to. Even though it is a complicated way of achieving this effect, there are no traps in the code.
+
+```{r}
+add1(3)
+add2(4)
+```
+
+For reasons that will soon be apparent I just want to show you that setting a global variable `x` does not change the behaviour:
+
+```{r}
+x <- 3
+add1(3)
+add2(4)
+```
+
+It also shouldn't. When we read the definition of the closure we can see that the `x` it refers to is the parameter of `g`, not a global variable.
+
+But now I am going to break the closure without even touching it. I just do one simple extra thing in `f`: I don't just change the enclosing scope of `f`, I do the same for the caller of `f`. I set the parent of the caller of `f` to be its caller instead of its enclosing environment:
+
+```{r}
+f <- function() {
+  my_env <- environment()
+  call_env <- parent.frame()
+  parent.env(my_env) <- call_env
+  parent.env(call_env) <- parent.frame(2)
+  y
+}
+```
+
+I haven't touched the closure, `g`, of the `add1` and `add2` functions. I have just made a small change to `f`. Now, however, if I don't have a global variable for `x` the addition functions do not work. This would give me an error:
+
+```r
+rm(x)
+add1(3)
+```
+
+Even worse, if I *do* have a global variable `x` I don't get an error, but I don't get the expected results either.
+
+```{r}
+x <- 3
+add1(3)
+add2(4)
+```
+
+What happens here, of course, is that we change the enclosing scope of the closure from the `g` call to the global environment (which is the calling scope of `g` as well as its parent environment), so this is where we now start the search for `x`. The evaluation environment for the `g` call is not on the search path any longer.
+
+While you *can* modify environments in this way, you should need a very good reason to do so. Changing the behaviour of completely unrelated functions is the worst kind of side effects. It is one thing to mess up your own function, but don't mess up other people's functions. Of course, we are only modifying active environments here. We have not permanently damaged any function; we have just messed up the behaviour of function calls on the stack---if we wanted to mess up functions permanently we can do so using the `environment` function as well, though, but doing that tends to be a more deliberate and thought-through choice.
+
+Don't go modifying the scope of calling functions. If you want to change the scope of expressions you evaluate, you are better off creating new environment chains for this, rather than modifying existing ones; the latter solution can easily have unforeseen consequences while the former at least has consequences restricted to the function you are writing.
+
 ## Explicitly creating environments
-
-So how can we make working with environments even more complicated? We can, of course, start making our own in our programs and chain them up in all kinds of ways, adding even more environments to the scope graph.
-
-
 
 ```{r}
 env <- new.env()
@@ -190,4 +276,4 @@ exists("x", env)
 
 ## Environments and expression evaluation
 
-Now, finally, we come to what this chapter is all about: how we combine expressions and environments to compute values. The good news is that it gets pretty simple after all of the stuff above.
+Now, finally, we come to what this chapter is all about: how we combine expressions and environments to compute values. The good news is that we are past all the hard stuff and it gets pretty simple after all of the stuff above.
