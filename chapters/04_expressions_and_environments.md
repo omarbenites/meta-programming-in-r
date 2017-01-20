@@ -1,10 +1,10 @@
 # Expressions and environments
 
-In this chapter we dig deeper into how environments work and how we can evaluate expressions in different environments. Understanding how environments are chained together helps you understand how the language finds variables, and being able to create, manipulate, and chain together environments when evaluating expressions is a key trick for meta-programming.
+In this chapter, we dig deeper into how environments work and how we can evaluate expressions in different environments. Understanding how environments are chained together helps you understand how the language finds variables and being able to create, manipulate, and chain together environments when evaluating expressions is a key trick for meta-programming.
 
 ## Expressions
 
-You can consider everything that is evaluated in R to be an expression. Every statement you have in your programs is also an expression that evaluate to some value (which, of course, might be `NULL`). This includes control structures and function bodies. You can consider it all expressions; just some expressions involves evaluating several contained expressions for their side-effect before returning the result of the last expression they evaluate. From a meta-programming perspective, though, we are most interested in expressions we can get our hands on and examine, modify, or evaluate within a program.
+You can consider everything that is evaluated in R to be an expression. Every statement you have in your programs is also an expression that evaluates to some value (which, of course, might be `NULL`). This includes control structures and function bodies. You can consider it all expressions; just some expressions involves evaluating several contained expressions for their side-effect before returning the result of the last expression they evaluate. From a meta-programming perspective, though, we are most interested in expressions we can get our hands on and examine, modify, or evaluate within a program.
 
 Believe it or not, we have already seen most of the ways to get expression objects. We can get function bodies using the `body` function or we can construct expressions using `quote` or `call`. Using any of these methods, we get an object we can manipulate and evaluate from within a program. Usually, expressions are just automatically evaluated when R gets to them during a program's execution, but if we have an expression as the kind of object we can manipulate, we have to explicitly evaluate it. If we don't evaluate it, its value is the actual expression; if we evaluate it, we get the value it corresponds to in a given scope.
 
@@ -93,17 +93,17 @@ If a package imports other packages, these goes into the import environment, bel
 
 [^depends-vs-imports]: 
 
-	Strictly speaking, there is a lot more to importing other packages than what I just explained here. Since this book is not about R packages, I will only give a very short explanation in this footnote.
+ Strictly speaking, there is a lot more to importing other packages than what I just explained here. Since this book is not about R packages, I will only give a very short explanation in this footnote.
 
-	There are three ways of specifying that a package depends on anther in the `DESCRIPTION` file: Using `Suggests:`, `Depends:`, and `Imports:`. The first doesn't actually set up any dependencies; it is just a suggestion of other packages that might enhance the functionality of the one being defined. 
-	
-	The packages specified in the `Depends:` directive will be loaded into the `search` path when you load the package. For packages specified here, you will clutter up the global namespace---not the global environment, but the search path below it---and you risk that functions you depend on will be overshadowed by packages that are loaded into the global namespace later. You should avoid using `Depends:` when you can, for these reasons.
-	
-	Using `Imports:` you just require that a set of other packages are installed before your own package can be installed. Those packages, however, are not put on the search path, nor are they imported in the `imports` environment. Using `Imports:` just enable you to access functions and data in another package using the package namespace prefix, so if you `Imports:` the `stats` package you know you can access `stats::sd` because that function is guaranteed to exist on the installation when your package is used.
-	
-	Actually importing variables into the `imports` namespace, you need to modify the `NAMESPACE` file, using the directives `imports()`, `importFrom()`, `importClassesFrom()`, or `importMethodsFrom()`. The easiest way to handle the `NAMESPACE` file, though, is using `Roxygen`, and here you can import names using `@importFrom <package> <name>` for a single function, `@import <package>` for the entire package, and `@importClassesFrom <package> <classes>` and `@importMethodsFrom <package> <methods>` for S4 classes.
-	
-	To ensure that packages you write play well with other namespaces you should use `Imports:` for dependencies you absolutely need (and `Suggests:` for other dependencies) and either use the package prefixes for dependencies in other packages or import the dependencies in the `NAMESPACE`.
+ There are three ways of specifying that a package depends on anther in the `DESCRIPTION` file: Using `Suggests:`, `Depends:`, and `Imports:`. The first doesn't actually set up any dependencies; it is just a suggestion of other packages that might enhance the functionality of the one being defined. 
+ 
+ The packages specified in the `Depends:` directive will be loaded into the `search` path when you load the package. For packages specified here, you will clutter up the global namespace---not the global environment, but the search path below it---and you risk that functions you depend on will be overshadowed by packages that are loaded into the global namespace later. You should avoid using `Depends:` when you can, for these reasons.
+ 
+ Using `Imports:` you just require that a set of other packages are installed before your own package can be installed. Those packages, however, are not put on the search path, nor are they imported in the `imports` environment. Using `Imports:` just enable you to access functions and data in another package using the package namespace prefix, so if you `Imports:` the `stats` package you know you can access `stats::sd` because that function is guaranteed to exist on the installation when your package is used.
+ 
+ Actually importing variables into the `imports` namespace, you need to modify the `NAMESPACE` file, using the directives `imports()`, `importFrom()`, `importClassesFrom()`, or `importMethodsFrom()`. The easiest way to handle the `NAMESPACE` file, though, is using `Roxygen`, and here you can import names using `@importFrom <package> <name>` for a single function, `@import <package>` for the entire package, and `@importClassesFrom <package> <classes>` and `@importMethodsFrom <package> <methods>` for S4 classes.
+ 
+ To ensure that packages you write play well with other namespaces you should use `Imports:` for dependencies you absolutely need (and `Suggests:` for other dependencies) and either use the package prefixes for dependencies in other packages or import the dependencies in the `NAMESPACE`.
 
 The function `sd` sits in the package `stats`. Its parent is `namespace:stats` and its grandparent is `imports:stats`, and its great grandparent is `namespace:base`. If we access `sd` from the global environment, though, we find it in `package:stats`. 
 
