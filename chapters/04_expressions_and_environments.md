@@ -253,27 +253,166 @@ Don't go modifying the scope of calling functions. If you want to change the sco
 
 ## Explicitly creating environments
 
+You create a new environment with the `new.env` function. By default, this environment will have current environment as its parent[^truth_of_the_env] and you can use functions such as `exists` and `get` to check what it contains.
+
+[^truth_of_the_env]: If you check the documentation for `new.env` you will see that the default argument is actually `parent.frame()`. If you think about it, this is how it becomes the current environment: when you call `new.env` the current environment will be its parent frame.
+
 ```{r}
 env <- new.env()
 x <- 5
 exists("x", env)
 get("x", env)
-env$x
 
+f <- function() {
+  x <- 7
+  new.env()
+}
+env2 <- f()
+get("x", env2)
+```
+
+You can also use the `$` subscript operator to access it, but in this case R will not search up the parent list to find a variable; only if a variable is in the actual environment can you get to it.
+
+```{r}
+env$x
+```
+
+You can assign variables to environments using `assign` or through the `$<-` function.
+
+```{r}
 assign("x", 3, envir = env)
 env$x
-x
+env$x <- 7
+env$x
 ```
+
+Depending on what you want to do with the environment, you might not want it to have a parent environment. There is no way to achieve that.
 
 ```r
 env <- new.env(parent = NULL) # This won't work!
 ```
 
+All environments have a parent except the empty environment, but you can get the next best thing by making this environment the parent of your new one.
+
 ```{r}
+global_x <- "foo"
 env <- new.env(parent = emptyenv())
-exists("x", env)
+exists("global_x", env)
 ```
+
+We can try to do something a little more interesting with manually created environments: build a parallel call stack we can use to implement dynamic scoping rather than lexical scoping. Lexical scoping is the scoping we already have in R, where a function-call's parent is the definition scope of the function. Dynamic scope instead has the calling environment. It is terribly hard to reason about programs in languages with dynamic scope, so I would advice that you avoid them, but for the purpose of education we can try implementing it.
+
+Since we don't want to mess around with the actual call stack and modify parent pointers, we need make a parallel sequence of environments and we need to copy the content of each call stack frame into these. We can copy an environment like this:
+
+```{r}
+copy_env <- function(from, to) {
+  for (name in ls(from, all.names = TRUE)) {
+    assign(name, get(name, from), to)
+  }
+}
+```
+
+Just for illustration purposes, we need a function that will show us what names we see in each environment when moving down towards the global environment---we don't want to go all the way down to the empty environment, here, so we stop a little early. This function lets us do that:
+
+```{r}
+show_env <- function(env) {
+  if (!identical(env, globalenv())) {
+    print(env)
+    print(names(env))
+    show_env(parent.env(env))
+  }
+}
+```
+
+Now comes the function for creating the parallel sequence of environments. It is not actually that difficult; we can use `parent.frame` to get the frames on the call stack arbitrarily deep---well, down to the first function call---and we can get the depth of the call stack using the function `sys.nframe`. The only thing we have to be careful about is adjusting the depth of the stack by one since we want to create the call stack chain for the *caller* of the function; not for the function itself. The rest is just a loop.
+
+```{r}
+build_caller_chain <- function() {
+  n <- sys.nframe() - 1
+  env <- globalenv()
+  for (i in seq(1,n)) {
+    env <- new.env(parent = env)
+    frame <- parent.frame(n - i + 1)
+    copy_env(frame, env)
+  }
+  env
+}
+```
+
+To see it in action we need to set up a rather convoluted example with both nested scopes and a call stack. It doesn't look pretty, but try to work through it and consider what the function environments must be and what the call stack must look like.
+
+[comment]: # I have to fake this one because of knitr...
+
+
+```r
+f <- function() {
+  x <- 1
+  function() {
+    y <- 2
+    function() {
+      z <- 3
+      
+      print("---Enclosing environments---")
+      show_env(environment())
+
+      call_env <- build_caller_chain()
+      print("---Calling environments---")
+      show_env(call_env)
+    }
+  }
+}
+g <- f()()
+h <- function() {
+  x <- 4
+  y <- 5
+  g()
+}
+h()
+## [1] "---Enclosing environments---"
+## <environment: 0x1035937b8>
+## [1] "z"
+## <environment: 0x103596780>
+## [1] "y"
+## <environment: 0x1035964e0>
+## [1] "x"
+## [1] "---Calling environments---"
+## <environment: 0x10354b748>
+## [1] "z"
+## <environment: 0x103553b20>
+## [1] "x" "y"
+```
+
+When we call `h` it calls `g` and we get the list of environments starting from the inner-most level where we have a `z` and out till the outermost level, just before the global environment, where we have the `x`. On the (parallel) call-stack we also see a `z` first (it is in a copy o the function's environment, but it is there), but this chain is only two steps long and the second environment contains both `x` and `y`.
+
+We can use the stack-chain we constructed here to implement dynamic scoping. We simply need to evaluate expressions in the scope defined by this chain rather than the current evaluating environment. The `<<-` assignment operator won't work---it would require us to write a similar function to get that behaviour, and it would be a design choice to which degree changes made to this chain should be moved back into the actual call-stack frames---but as long as it comes to evaluating expressions, we can use it for dynamic scoping.
 
 ## Environments and expression evaluation
 
-Now, finally, we come to what this chapter is all about: how we combine expressions and environments to compute values. The good news is that we are past all the hard stuff and it gets pretty simple after all of the stuff above.
+Now, finally, we come to what this chapter is all about: how we combine expressions and environments to compute values. The good news is that we are past all the hard stuff and it gets pretty simple after all of the stuff above. All you have to do to evaluate an expression in any selected environment chain is to provide it to the `eval` function. We can see it in the example below that evaluates the same expression in the lexical scope and the dynamic scope:
+
+```{r}
+f <- function() {
+  x <- 1
+  function() {
+    y <- 2
+    function() {
+      z <- 3
+      
+      cat("Lexical scope: ", x + y + z, "\\n")
+      
+      call_env <- build_caller_chain()
+      cat("Dynamic scope: ", eval(quote(x + y + z), call_env), "\\n")
+    }
+  }
+}
+g <- f()()
+
+h <- function() {
+  x <- 4
+  y <- 5
+  g()
+}
+h()
+```
+
+The hard part of working with environments really isn't evaluating them. It is manipulating them. 

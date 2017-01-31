@@ -115,21 +115,94 @@ add1(3)
 add2(4)
 
 
+env <- new.env()
+x <- 5
+exists("x", env)
+get("x", env)
 
+f <- function() {
+  x <- 7
+  new.env()
+}
+env2 <- f()
+get("x", env2)
 
+env$x
 
-make_dynamic_scope <- function(f) {
-  get_caller_chain <- function() {
-    n <- sys.nframe() # at least 2
-    print(n)
-    start <- new.env()
-    # start one extra frame down to search from caller...
-    for (i in seq(2,n)) {
-        
-    }
-    
-  }
-  wrapper <- function(...) {
-    
+assign("x", 3, envir = env)
+env$x
+x
+
+copy_env <- function(from, to) {
+  for (name in ls(from, all.names = TRUE)) {
+    assign(name, get(name, from), to)
   }
 }
+
+show_env <- function(env) {
+  if (!identical(env, globalenv())) {
+    print(env)
+    print(names(env))
+    show_env(parent.env(env))
+  }
+}
+
+build_caller_chain <- function() {
+  n <- sys.nframe() - 1
+  env <- globalenv()
+  for (i in seq(1,n)) {
+    env <- new.env(parent = env)
+    frame <- parent.frame(n - i + 1)
+    copy_env(frame, env)
+  }
+  env
+}
+
+f <- function() {
+  x <- 1
+  function() {
+    y <- 2
+    function() {
+      z <- 3
+      
+      print("---Enclosing environments---")
+      show_env(environment())
+
+      call_env <- build_caller_chain()
+      print("---Calling environments---")
+      show_env(call_env)
+    }
+  }
+}
+g <- f()()
+
+h <- function() {
+  x <- 4
+  y <- 5
+  g()
+}
+h()
+
+
+f <- function() {
+  x <- 1
+  function() {
+    y <- 2
+    function() {
+      z <- 3
+      
+      cat("Lexical scope: ", x + y + z, "\n")
+      
+      call_env <- build_caller_chain()
+      cat("Dynamic scope: ", eval(quote(x + y + z), call_env), "\n")
+    }
+  }
+}
+g <- f()()
+
+h <- function() {
+  x <- 4
+  y <- 5
+  g()
+}
+h()
