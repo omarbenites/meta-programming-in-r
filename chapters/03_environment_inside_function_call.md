@@ -103,7 +103,7 @@ The `formals` give us the arguments as we gave them in the function definition, 
 
 If we actually want the arguments parsed to the current function in the form of the promises they are really represented as, we need to get hold of them without evaluating them. If we take an argument and use it as an expression, the promise will be evaluated. This goes for both default parameters and parameters provided in the function call; they are all promises that will be evaluated in different environments, but they are all promises nonetheless.
 
-One way to get the expression that the promises represent is to use the function `substitute`. This function, which we will get intimately familiar with in the chapter *[Manipulation of expressions]*, substitutes into an expression the values that variables refer to. This means that variables are replaced by the verbatim expressions, the expressions are not evaluated before they are substituted into an expression.
+One way to get the expression that the promises represent is to use the function `substitute`. This function, which we will get intimately familiar with in the chapter *[Manipulating expressions]*, substitutes into an expression the values that variables refer to. This means that variables are replaced by the verbatim expressions, the expressions are not evaluated before they are substituted into an expression.
 
 This small function illustrate how we can get the expression passed to a function:
 
