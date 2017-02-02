@@ -164,7 +164,9 @@ simplify_expr <- function(expr) {
     simplify_call(expr)
 
   } else {
-    stop(paste0("Unexpected expression ", deparse(expr), " in simplifying")) # nocov
+    stop(paste0("Unexpected expression ", 
+                deparse(expr), 
+                " in simplifying"))
   }
 }
 ```
@@ -175,22 +177,31 @@ Call handling can then look like this:
 
 ```{r}
 simplify_call <- function(expr) {
-  if (expr[[1]] == as.name("+")) return(simplify_addition(expr[[2]], expr[[3]]))
+  if (expr[[1]] == as.name("+"))
+    return(simplify_addition(expr[[2]], expr[[3]]))
   if (expr[[1]] == as.name("-")) {
-    if (length(expr) == 2) return(simplify_unary_subtraction(expr[[2]]))
-    else return(simplify_subtraction(expr[[2]], expr[[3]]))
+    if (length(expr) == 2)
+      return(simplify_unary_subtraction(expr[[2]]))
+    else
+      return(simplify_subtraction(expr[[2]], expr[[3]]))
   }
 
-  if (expr[[1]] == as.name("*")) return(simplify_multiplication(expr[[2]], expr[[3]]))
-  if (expr[[1]] == as.name("/")) return(simplify_division(expr[[2]], expr[[3]]))
+  if (expr[[1]] == as.name("*"))
+    return(simplify_multiplication(expr[[2]], expr[[3]]))
+  if (expr[[1]] == as.name("/"))
+    return(simplify_division(expr[[2]], expr[[3]]))
 
-  if (expr[[1]] == as.name("^")) return(simplify_exponentiation(expr[[2]], expr[[3]]))
+  if (expr[[1]] == as.name("^"))
+    return(simplify_exponentiation(expr[[2]], expr[[3]]))
 
   if (expr[[1]] == as.name("(")) {
     subexpr <- simplify_expr(expr[[2]])
-    if (is.atomic(subexpr) || is.name(subexpr)) return(subexpr)
-    else if (is.call(subexpr) && subexpr[[1]] == as.name("(")) return(subexpr)
-    else return(call("(", subexpr))
+    if (is.atomic(subexpr) || is.name(subexpr))
+      return(subexpr)
+    else if (is.call(subexpr) && subexpr[[1]] == as.name("("))
+      return(subexpr)
+    else
+      return(call("(", subexpr))
   }
 
   simplify_function_call(expr)
@@ -207,7 +218,8 @@ simplify_addition <- function(f, g) {
   right <- simplify_expr(g)
   if (left == 0) return(right)
   if (right == 0) return(left)
-  if (is.numeric(left) && is.numeric(right)) return(left + right)
+  if (is.numeric(left) && is.numeric(right))
+    return(left + right)
   call("+", left, right)
 }
 ```
@@ -217,9 +229,12 @@ Unary minus we can just evaluate if its argument is numeric, otherwise we can ge
 ```{r}
 simplify_unary_subtraction <- function(f) {
    simplified <- simplify_expr(f)
-   if (is.numeric(simplified)) -simplified
-   else if (is.call(simplified) && simplified[[1]] == "-") simplified[[2]]
-   else bquote(-.(simplified))
+   if (is.numeric(simplified))
+     -simplified
+   else if (is.call(simplified) && simplified[[1]] == "-")
+     simplified[[2]]
+   else
+     bquote(-.(simplified))
 }
 ```
 
@@ -232,11 +247,15 @@ simplify_subtraction <- function(f, g) {
   left <- simplify_expr(f)
   right <- simplify_expr(g)
   if (left == 0) {
-    if (is.numeric(right)) return(-right)
-    else return(bquote(-.(right)))
+    if (is.numeric(right))
+      return(-right)
+    else
+      return(bquote(-.(right)))
   }
-  if (right == 0) return(left)
-  if (is.numeric(left) && is.numeric(right)) return(left - right)
+  if (right == 0)
+    return(left)
+  if (is.numeric(left) && is.numeric(right))
+    return(left - right)
   call("-", left, right)
 }
 ```
@@ -247,10 +266,14 @@ For multiplication we can simplify cases where the multiplication involves zero 
 simplify_multiplication <- function(f, g) {
   left <- simplify_expr(f)
   right <- simplify_expr(g)
-  if (left == 0 || right == 0) return(0)
-  if (left == 1) return(right)
-  if (right == 1) return(left)
-  if (is.numeric(left) && is.numeric(right)) return(left * right)
+  if (left == 0 || right == 0)
+    return(0)
+  if (left == 1)
+    return(right)
+  if (right == 1)
+    return(left)
+  if (is.numeric(left) && is.numeric(right))
+    return(left * right)
   call("*", left, right)
 }
 ```
@@ -261,8 +284,10 @@ Division and exportation is just more of the same, with different cases to handl
 simplify_division <- function(f, g) {
   left <- simplify_expr(f)
   right <- simplify_expr(g)
-  if (right == 1) return(left)
-  if (is.numeric(left) && is.numeric(right)) return(left / right)
+  if (right == 1)
+    return(left)
+  if (is.numeric(left) && is.numeric(right))
+    return(left / right)
   call("/", left, right)
 }
 
@@ -273,7 +298,8 @@ simplify_exponentiation <- function(f, g) {
   if (left == 0) return(0)
   if (left == 1) return(1)
   if (right == 1) return(left)
-  if (is.numeric(left) && is.numeric(right)) return(left ^ right)
+  if (is.numeric(left) && is.numeric(right))
+    return(left ^ right)
   call("^", left, right)
 }
 ````
@@ -288,7 +314,8 @@ simplify_function_call <- function(expr) {
     arguments[i] <- list(simplify_expr(expr[[i + 1]]))
   }
 
-  do.call("call", c(list(function_name), arguments), quote = TRUE)
+  do.call("call", c(list(function_name), arguments),
+          quote = TRUE)
 }
 ```
 
@@ -302,13 +329,12 @@ simplify_function_call <- function(expr) {
     arguments[i] <- list(simplify_expr(expr[[i + 1]]))
   }
 
-  # if we have simplified all expressions we might as well try calling the function
-  # if it is a function we know...
   if (all(unlist(Map(is.numeric, arguments)))) {
     if (function_name %in% c("sin", "cos", "exp", "log"))
       return(do.call(function_name, arguments))
   }
-  do.call("call", c(list(function_name), arguments), quote = TRUE)
+  do.call("call", c(list(function_name), arguments),
+          quote = TRUE)
 }
 ```
 
@@ -350,7 +376,8 @@ simplify_function_call <- function(expr) {
     arguments[i] <- list(simplify_expr(expr[[i + 1]]))
   }
 
-  result <- do.call("call", c(list(function_name), arguments), quote = TRUE)
+  result <- do.call("call", c(list(function_name), arguments),
+                    quote = TRUE)
   names(result) <- names(expr)
   expr
 }
