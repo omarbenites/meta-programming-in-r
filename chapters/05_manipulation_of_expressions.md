@@ -407,7 +407,6 @@ This function can look like this, where I've only handled three of the primitive
 
 ```r
 d <- function(f, x) {
-
   if (is.null(body(f))) {
     if (identical(f, sin)) return(cos)
     if (identical(f, cos)) return(function(x) -sin(x))
