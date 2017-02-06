@@ -323,6 +323,18 @@ simplify_function_call <- function(expr) {
 }
 ```
 
+For the same reason we actually have to remedy the `simplify_call` function. There, we compare `expr[[1]]` with names to dispatch to the various arithmetic operators. This only works if `expr[[1]]` is a name, so we have to make sure that we only do these comparisons when it is:
+
+```r
+simplify_call <- function(expr) {
+  if (is.name(expr[[1]])) {
+    # Dispatch to operators...
+  }
+
+  simplify_function_call(expr)
+}
+```
+
 We could also get a little more ambitions and try to evaluate functions when all their arguments are values and when we know what the functions are---or at least have a reasonable expectation that we would know. We could always check if we can find the name in a relevant environment, and if it is a function, but since we are simplify expressions where we don't expect to know variables that are not functions, it is probably too much to demand that all function symbols are known. Still, we could say that functions such as `sin` and `cos`, `exp` and `log` are their usual selves and then do something like this:
 
 ```{r}
@@ -336,7 +348,6 @@ simplify_function_call <- function(expr) {
   if (all(unlist(Map(is.numeric, arguments)))) {
     if (as.character(function_name) %in% c("sin", "cos", "exp", "log")) {
       result <- do.call(as.character(function_name), arguments)
-      names(result) <- names(expr)
       return(result)
     }
   }
@@ -401,9 +412,9 @@ eval(simplify_expr(expr2))
 
 As a second, only slightly more involved, example, we consider *automatic differentiation:* automatically translating a function that computes an expression into a function that computes the derived expression. We will assume that we have a function whose body contains only a single expression---one that doesn't involve control structures or sequences of statements but just a single arithmetic expression---and recurse through this expression, applying the rules of differentiation. Although what we do with this meta-program is more complex than the expression simplification we just implemented, you will see that the form of the program is very similar.
 
-We start with the main function, which we name `d` for differentiation. It takes two arguments: the function to be differentiated and the variable to take the derivative with respect to. If we want the function to be able to handle the built-in mathematical functions we need to handle these as special cases. These are implemented as so-called *primitive* functions and do not have a body. We need to handle them explicitly in the `d` function. For all other functions, we just need to compute the derivative of the expression in the function body. If we want to return a new function for the derivative we can just take the function we are modifying and replace its body. Since R doesn't actually let us modify arguments to a function, this will just create a copy we can return and leave the original function intact. Reusing the argument this way make sure that the new function has the same arguments, with the same names and same default values, as the original.
+We start with the main function, which we name `d` for differentiation. It takes two arguments: the function to be differentiated and the variable to take the derivative with respect to. If we want the function to be able to handle the built-in mathematical functions we need to handle these as special cases. These are implemented as so-called *primitive* functions and do not have a body. We need to handle them explicitly in the `d` function. For all other functions, we just need to compute the derivative of the expression in the function body. If we want to return a new function for the derivative we can just take the function we are modifying and replace its body. Since R doesn't actually let us modify arguments to a function, this will just create a copy we can return and leave the original function intact. Reusing the argument this way make sure that the new function has the same arguments, with the same names and same default values, as the original. It also ensures that the derivative will have the same enclosing environment as the original function, which is potentially important for when we evaluate it.
 
-This function can look like this, where I've only handled three of the primitive functions---you can add the remaining as an exercises:
+The `d` function can look like this, where I've only handled three of the primitive functions---you can add the remaining as an exercises:
 
 ```r
 d <- function(f, x) {
@@ -415,14 +426,14 @@ d <- function(f, x) {
     stop("unknown primitive")
 
   } else {
-    # for other functions we have to parse the body
-    # and differentiate it.
-    df <- f
-    body(df) <- simplify_expr(diff_expr(body(f), x))
+    e <- environment(f)
+    body(df) <- simplify_expr(diff_expr(body(f), x, e))
     df
   }
 }
 ```
+
+We send the function environment along with the recursion because we will need it when we have to deal with function calls  later. There, we will need to look up functions and analyse which parameters they take in order to apply the chain rule. For now, we just pass it along in the recursion.
 
 For aesthetic reasons, we simplify the expression we get from differentiating the body of `f`, using the code we wrote in the previous section. We can use `d` like this:
 
@@ -439,7 +450,7 @@ For computing the derivative of the function body, we follow the pattern we used
 The two basic cases for the recursive function are numbers and names---we assume that we do not get other atomic values such as logical vectors; we wouldn't know how to differentiate them anyway. For numbers, the derivative is always zero while for names it depends on whether we have the variable we are computing the derivative with respect to or another variable. The recursive case for the function is function calls, where we just call another function to handle that case.
 
 ```r
-diff_expr <- function(expr, x) {
+diff_expr <- function(expr, x, e) {
   if (is.numeric(expr)) {
     quote(0)
 
@@ -448,7 +459,7 @@ diff_expr <- function(expr, x) {
     else quote(0)
 
   } else if (is.call(expr)) {
-    diff_call(expr, x)
+    diff_call(expr, x, e)
 
   } else {
     stop(paste0("Unexpected expression ", 
@@ -457,78 +468,145 @@ diff_expr <- function(expr, x) {
 }
 ```
 
-For calls, we dispatch based on the type of call, so we deal with arithmetic expressions through a function for each operator, we deal with parentheses similar to how we handled them in the expression simplification, and we have a function for differentiating all other function calls.
+For calls, we dispatch based on the type of call, so we deal with arithmetic expressions through a function for each operator, we deal with parentheses similar to how we handled them in the expression simplification, and we functions for differentiating other function calls. We have to handle primitive functions and user defined functions as two separate cases here as well. For user-defined functions we can analyse these, figure out their formal arguments, and apply the chain rule. For primitive functions, `formals` will give us an empty list, so that strategy will not work for those. So we handle them as a special case. I assume, here, that we have a list of names of the primitive functions. E.g. we could have
 
 ```r
-diff_call <- function(expr, x) {
-  if (expr[[1]] == as.name("+"))
-    return(diff_addition(expr[[2]], expr[[3]], x))
+.built_in_functions <- c("sin", "cos", "exp")
+```
 
-  if (expr[[1]] == as.name("-")) {
-    if (length(expr) == 2)
-      return(call("-", diff_expr(expr[[2]], x)))
-    else
-      return(diff_subtraction(expr[[2]], expr[[3]], x))
+If we need to handle only those three cases. Extend it as needed.
+
+The function handling calls looks like this:
+
+```r
+diff_call <- function(expr, x, e) {
+  if (is.name(expr[[1]])) {
+    if (expr[[1]] == as.name("+"))
+      return(diff_addition(expr[[2]], expr[[3]], x, e))
+
+    if (expr[[1]] == as.name("-")) {
+      if (length(expr) == 2)
+        return(call("-", diff_expr(expr[[2]], x, e)))
+      else
+        return(diff_subtraction(expr[[2]], expr[[3]], x, e))
+    }
+
+    if (expr[[1]] == as.name("*"))
+      return(diff_multiplication(expr[[2]], expr[[3]], x, e))
+    if (expr[[1]] == as.name("/"))
+      return(diff_division(expr[[2]], expr[[3]], x, e))
+
+    if (expr[[1]] == as.name("^"))
+      return(diff_exponentiation(expr[[2]], expr[[3]], x, e))
+
+    if (expr[[1]] == as.name("(")) {
+      subexpr <- diff_expr(expr[[2]], x, e)
+      if (is.atomic(subexpr) || is.name(subexpr))
+        return(subexpr)
+      else if (is.call(subexpr) && subexpr[[1]] == as.name("("))
+        return(subexpr)
+      else
+        return(call("(", subexpr))
+    }
   }
 
-  if (expr[[1]] == as.name("*"))
-    return(diff_multiplication(expr[[2]], expr[[3]], x))
-  if (expr[[1]] == as.name("/"))
-    return(diff_division(expr[[2]], expr[[3]], x))
-
-  if (expr[[1]] == as.name("^"))
-    return(diff_exponentiation(expr[[2]], expr[[3]], x))
-
-  if (expr[[1]] == as.name("(")) {
-    subexpr <- diff_expr(expr[[2]], x)
-    if (is.atomic(subexpr) || is.name(subexpr))
-      return(subexpr)
-    else if (is.call(subexpr) && subexpr[[1]] == as.name("("))
-      return(subexpr)
-    else
-      return(call("(", subexpr))
-  }
-
-  return(diff_general_function_call(expr, x))
+  if (is.name(expr[[1]]) && 
+      as.character(expr[[1]]) %in% .built_in_functions)
+    return(diff_built_in_function_call(expr, x, e))
+  else
+    return(diff_general_function_call(expr, x, e))
 }
 ```
 
 We handle the arithmetic operations just by following the rules we learned in calculus class:
 
 ```r
-diff_addition <- function(f, g, x) {
-  call("+", diff_expr(f, x), diff_expr(g, x))
+diff_addition <- function(f, g, x, e) {
+  call("+", diff_expr(f, x, e), diff_expr(g, x, e))
 }
 
-diff_subtraction <- function(f, g, x) {
-  call("-", diff_expr(f, x), diff_expr(g, x))
+diff_subtraction <- function(f, g, x, e) {
+  call("-", diff_expr(f, x, e), diff_expr(g, x, e))
 }
 
-diff_multiplication <- function(f, g, x) {
+diff_multiplication <- function(f, g, x, e) {
   # f' g + f g'
   call("+",
-       call("*", diff_expr(f, x), g),
-       call("*", f, diff_expr(g, x)))
+       call("*", diff_expr(f, x, e), g),
+       call("*", f, diff_expr(g, x, e)))
 }
 
-diff_division <- function(f, g, x) {
+diff_division <- function(f, g, x, e) {
   # (f' g − f g' )/g**2
   call("/",
        call("-",
-        call("*", diff_expr(f, x), g),
-        call("*", f, diff_expr(g, x))),
+        call("*", diff_expr(f, x, e), g),
+        call("*", f, diff_expr(g, x, e))),
        call("^", g, 2))
 }
 
-diff_exponentiation <- function(f, g, x) {
+diff_exponentiation <- function(f, g, x, e) {
   # Using the chain rule to handle this generally.
   # if y = f**g then dy/dx = dy/df df/dx = g * f**(g-1) * df/dx
   dydf <- call("*", g, call("^", f, substitute(n - 1, list(n = g))))
-  dfdx <- diff_expr(f, x)
+  dfdx <- diff_expr(f, x, e)
   call("*", dydf, dfdx)
 }
 ```
 
 
+For function calls we have to apply the chain rule. For primitive functions we cannot get a list of formal arguments so we cannot handle these by inspecting the functions; we have to use their names to figure out what their arguments and derivaties are. I've shown a few cases below, but I will leave handling other functions as an exercises for the reader.
 
-We handle function calls using the chain rule. FIXME
+```r
+diff_built_in_function_call <- function(expr, x, e) {
+  # chain rule with a known function to differentiate...
+  if (expr[[1]] == as.name("sin"))
+    return(call("*", call("cos", expr[[2]]), diff_expr(expr[[2]], x, e)))
+
+  if (expr[[1]] == as.name("cos"))
+    return(call("*", call("-", call("sin", expr[[2]])), diff_expr(expr[[2]], x, e)))
+
+  if (expr[[1]] == as.name("exp"))
+    return(call("*", call("exp", expr[[2]]), diff_expr(expr[[2]], x, e)))
+}
+```
+
+For other function calls, we can inspect the function to work out which variables it has and apply the chain rules to those. This only works if we can actually figure out which function we are referring to, so we cannot handle cases where we have to compute it. In those cases we just give up. If we have a symbol for the function, however, we can look it up and inspect it. This isn't *entirely* safe for general use. If we calculate the derivative of a function, then change a global function that it refers to, we will have a derivative that uses the old global function and while the actual function uses the new global function. There isn't much we can do about this, though. At the point where we apply the chain rule, we need to know which arguments the function takes. That means that we need to know which function we are working with.
+
+I will assume that the arguments used in the function call are the relevant ones to consider when we apply the chain rules. Those that we are not passing along in the function call will have default values and will not depend on the arguments given to the derivative function, so we can ignore them. Therefore, we can take the arguments in the function call and sum over those in the chain rule. We need to know the names of the arguments in order to compute the derivatives of the function, and we need to handle both positional and named arguments, and this is where we have to look up the actual function.
+
+In the environment we have passed along in the recursion---the environment of the original function we are computing the derivative of---we look up the function we have to apply the chain rule to. With that function in hand we can use the function `match.call` got get all the names of the arguments in the function call. The `match.call` function takes care of merging named and positional arguments. For each argument we build a function call by changing the function to its derivative to the appropriate variable. We use the `bquote` function to call `d` to compute these derivatives. We then multiply the function call with the argument differentiated with the original variable. Collecting all these terms in a sum completes the chain rule.
+
+```r
+diff_general_function_call <- function(expr, x, e) {
+  function_name <- expr[[1]]
+  if (!is.name(function_name))
+    stop(paste0("Unexpected call ", deparse(expr)))
+
+  func <- get(as.character(function_name), e)
+  full_call <- match.call(func, expr)
+  variables <- names(full_call)
+
+  arguments <- vector("list", length(full_call) - 1)
+  for (i in seq_along(arguments)) {
+    var <- variables[i + 1]
+    dfdz <- full_call
+    dfdz[[1]] <- bquote(d(.(function_name), .(var)))
+    dzdx <- diff_expr(expr[[i + 1]], x, e)
+    arguments[[i]] <- bquote(.(dfdz) * .(dzdx))
+  }
+  as.call(c(list(sum), arguments))
+}
+```
+
+There is one caveat with this solution: even if the original function is vectorised the derivative won't be. If we define these functions
+
+```r
+f <- function(x, y) x^2 * y
+g <- function(z) f(2*z, z^2)
+h <- function(z) 4*z^4
+```
+
+then `g` and `h` should be the same functions. However, if we calculate `d(g,"z")` and `d(h,"z")` and call them with a vector of values, the former will add all the results together while the latter will return a vector of values. The `sum` call in the derivative of `g` will gobble up all the values. You can fix this by calling `Vectorize` on `d(g,"z")`.
+
+Other than that, we now have a meta-program for translating a function into its derivative. It doesn't handle all possible functions, it has to be functions that evaluate simple expressions, the chain rule can only be applied to known functions mentioned by name, and we have only handled some of the primitive functions, but I trust you can see how you could build more functionality on top of what we have now.
