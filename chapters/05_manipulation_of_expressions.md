@@ -547,8 +547,8 @@ diff_division <- function(f, g, x, e) {
 
 diff_exponentiation <- function(f, g, x, e) {
   # Using the chain rule to handle this generally.
-  # if y = f**g then dy/dx = dy/df df/dx = g * f**(g-1) * df/dx
-  dydf <- call("*", g, call("^", f, substitute(n - 1, list(n = g))))
+  dydf <- call("*", g, 
+               call("^", f, substitute(n - 1, list(n = g))))
   dfdx <- diff_expr(f, x, e)
   call("*", dydf, dfdx)
 }
@@ -561,13 +561,16 @@ For function calls we have to apply the chain rule. For primitive functions we c
 diff_built_in_function_call <- function(expr, x, e) {
   # chain rule with a known function to differentiate...
   if (expr[[1]] == as.name("sin"))
-    return(call("*", call("cos", expr[[2]]), diff_expr(expr[[2]], x, e)))
+    return(call("*", call("cos", expr[[2]]), 
+                diff_expr(expr[[2]], x, e)))
 
   if (expr[[1]] == as.name("cos"))
-    return(call("*", call("-", call("sin", expr[[2]])), diff_expr(expr[[2]], x, e)))
+    return(call("*", call("-", call("sin", expr[[2]])),
+                diff_expr(expr[[2]], x, e)))
 
   if (expr[[1]] == as.name("exp"))
-    return(call("*", call("exp", expr[[2]]), diff_expr(expr[[2]], x, e)))
+    return(call("*", call("exp", expr[[2]]),
+                diff_expr(expr[[2]], x, e)))
 }
 ```
 
