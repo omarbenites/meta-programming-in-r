@@ -32,3 +32,18 @@ parse(text = "x + y")
 (expr <- parse(text = "x + y; z * x"))
 expr[[1]]
 expr[[2]]
+
+f <- function(x) deparse(x)
+g <- function(x) deparse(substitute(x))
+
+x <- 1:4; y <- x**2
+f(x + y)
+g(x + y)
+
+
+expr <- quote(x + y)
+substitute(expr)
+substitute(expr, list(expr = expr))
+substitute(substitute(expr, list(expr = expr)), list(y = 2))
+substitute(substitute(expr, list(y = 2)), list(expr = expr))
+eval(substitute(substitute(expr, list(y = 2)), list(expr = expr)))

@@ -5,6 +5,7 @@ CHAPTERS := 000_header.md \
 			03_environment_inside_function_call.md \
 			04_expressions_and_environments.md \
 			05_manipulation_of_expressions.md \
+			06_quotes_and_substitution.md \
 
 
 SOURCE_CHAPTERS := $(foreach chapter,$(CHAPTERS),chapters/$(chapter))

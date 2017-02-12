@@ -1,4 +1,4 @@
-# Quotes and substitution
+# Substitution and non-standard evaluation
 
 We can take expressions and manipulate them by treating them as strings, but we can also modify them by substituting variables for expressions, we can build expressions by more advanced quoting, and we can move back and forth between strings and expressions.
 
@@ -42,7 +42,7 @@ parse(text = "x + y")
 
 For the call to `parse`, here, we need to specify that we are parsing a text (string). Otherwise, `parse` will assume that we are giving it a file name and try to parse the content of that file. The result of the call to `parse` is not, strictly speaking, and expression. Although the type it write is `expression`. That is an unfortunate choice for this type, because `expression` objects are actually lists of expressions. The `parse` function can parse more than one expression, and sequences of expressions are represented in the `expression` type. You can get the *actual* expressions by indexing into this object.
 
-```
+```{r}
 (expr <- parse(text = "x + y; z * x"))
 expr[[1]]
 expr[[2]]
@@ -61,3 +61,64 @@ g(x + y)
 
 ## Substitution
 
+The `substitute` function replaces variables for values in an expression. The `deparse(substitute(x))` construction we just saw exploits this by using `substitute` to get the expression that the function parameter `x` refers to before translating it into a string. If we just refer to `x` will well force an evaluation of the argument and get the value it evaluates to; instead, because we use `substitute`, we get the expression that `x` refers to.
+
+Getting the expression used as a function argument, rather than the value of the expression, is a common use of `substitute`. Together with `deparse`, it is used to create labels for plots. It is also use for so-called *non-standard evaluation*---functions that do not evaluate their arguments following the default rules for environments. Non-standard evaluation, which we return to in the next section, obtains the expressions in arguments using `substitute` and then evaluating them, using `eval` in environments different from the function's evaluation environment.
+
+Before we consider evaluating expressions, however, we should get a handle of how `substitute` works. This depend a little bit on where it is called. In the global environment, `substitute` doesn't do anything. At least not unless you give it more arguments than the expression---we get to that shortly. In all other environments, if you just call `substitute` with an expression, the function will search through the expression and find variables. If it finds a variable that has a value in the current environment---whether it is a promise for a function call or a variable we have assigned values to---it will substitute the variable with the value. If the variable does not have a value in the environment it is left alone. In the global environment it leaves all variables alone.
+
+In the example below we see that `substitute(x + y)` doesn't get modified in the global environment, even though the variables `x` and `y` are defined. Inside the function environment for `f`, however, we substitute the two variables with their values.
+
+```{r}
+x <- 2; y <- 3
+substitute(x + y)
+f <- function(x, y) substitute(x + y)
+f(2, 3)
+```
+
+With `substitute`, variables are not found the same way as they are in `eval`. When `substitute` looks in an environment, it does not follow the parent pointer. If it doesn't find the variable to substitute in the exact environment in which it is called, it will not look further. So, if we write a functions like these:
+
+```{r}
+y - 3
+f <- function(x) substitute(x + y)
+f(2)
+
+g <- function(x) function(y) substitute(x + y)
+h <- g(2)
+h(3)
+```
+
+the function `f`, when called, will have `x` in its evaluation environment and `y` in the parent environment---which is the global environment---but `substitute` will only substitute the local variable, `x`. For `h`, it will know `y` as a local variable and `x` from its closure, but only `y`, the local variable, will be substituted.
+
+The actual environment that `substitute` use to find variables is given as its second argument. The default is just the current evaluating environment. We can change that by providing either an environment or a list with variable to value mappings.
+
+```{r}
+e <- new.env(parent = emptyenv())
+e$x <- 2
+e$y <- 3
+substitute(x + y, e)
+
+substitute(x + y, list(x = 2, y = 3))
+```
+
+Again, `substitute` will not follow parent pointers, whether these are set implicitly or explicitly in the environment we pass on to the function.
+
+```{r}
+x <- 2 ; y <- 3
+e <- new.env(parent = globalenv())
+substitute(x + y, e)
+
+e <- new.env(parent = globalenv())
+e$x <- 2
+e$y <- 3
+e2 <- new.env(parent = e)
+substitute(x + y, e2)
+```
+
+If you want a variable substituted, you need to make sure it is in the exact environment you provide to `substitute`.
+
+### Substituting expressions held in variables
+
+A common case when you manipulate expressions is that you have a reference to an expression---for example from a function argument---and you want to modify it. You cannot do this directly with `substitute`.
+
+## Non-standard evaluation
