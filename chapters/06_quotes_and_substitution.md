@@ -119,6 +119,113 @@ If you want a variable substituted, you need to make sure it is in the exact env
 
 ### Substituting expressions held in variables
 
-A common case when you manipulate expressions is that you have a reference to an expression---for example from a function argument---and you want to modify it. You cannot do this directly with `substitute`.
+A common case when you manipulate expressions is that you have a reference to an expression---for example from a function argument---and you want to modify it. In the global environment, you cannot do this directly with `substitute`. If you give `substitute` a variable, it will just return that variable.
+
+```{r}
+expr <- quote(x + y)
+substitute(expr)
+```
+
+This is because `substitute` doesn't replace the variable in the global environment. You can get the expression substituted by explicitly giving `substitute` the expression in an environment or a list:
+
+```{r}
+substitute(expr, list(expr = expr))
+```
+
+Usually, though, you don't manipulate expressions in the global environment, and inside a function you *can* substitute an expression:
+
+```{r}
+f <- function() {
+  expr <- quote(x + y)
+  substitute(expr)
+}
+f()
+```
+
+But what if you want to replace, say, `y` with 2 in the expression here. The substitution, both in the global environment with an explicit list or inside a function, will replace `expr` with `quote(x + y)`, but you want to then take that and replace `y` with 2. You cannot just get `y` from the local environment and giving it to `substitute` explicitly won't work either.
+
+```{r}
+f <- function() {
+  expr <- quote(x + y)
+  y <- 2
+  substitute(expr)
+}
+f()
+
+f <- function() {
+  expr <- quote(x + y)
+  substitute(expr, list(y = 2))
+}
+f()
+```
+
+What you want to do is, first replace `expr` with the expression `quote(x + y)` and then replace `y` with 2. So the natural approach is to write this code, that will not work:
+
+```{r}
+substitute(substitute(expr, list(expr = expr)), list(y = 2))
+```
+
+The problem here is that `y` doesn't appear anywhere in the expression given to the outermost `substitute`, so it won't be substituted in anywhere. What you get is just the expression
+
+```r
+substitute(expr, list(expr = expr))
+```
+
+which you can evaluate to get `x + y`
+
+```r
+eval(substitute(substitute(expr, list(expr = expr)), list(y = 2)))
+```
+
+but the evaluation *first* substitutes `y` into the inner-most `substitute` expression---where there is no `y` variable---and *then* substitutes `expr` into the expression `expr`. The order is wrong.
+
+To substitute variables in an expression you hold in another variable you have to write the expression in the opposite order of what comes naturally. You don't want to substitute `expr` at the inner-most level and then `y` at the outer-most level; you want to first substitute `expr` into an substitute expression that takes care of substituting `y`. The outer-most level substitutes `expr` into `substitute(expr, list(y = 2))` which you can evaluate to get `y` substituted into the expression.
+
+So we create the expression we need to evaluate like this:
+
+```{r}
+substitute(substitute(expr, list(y = 2)), list(expr = expr))
+```
+
+and we complete the substitute like this:
+
+```{r}
+eval(substitute(substitute(expr, list(y = 2)), list(expr = expr)))
+```
+
+It might take a little getting used to, but you just have to remember that you need to do the substitutions in this order.
+
+### Substituting function arguments
+
+Function arguments are passed as unevaluated promises, but the second we access them they get evaluated. If you want to get hold of the promises without evaluating them, you can use the `substitute` function. This gives you the argument as an unevaluated, or quoted, expression.
+
+This can be useful if you want to manipulate expressions or evaluate them in ways different from the norm---as we explore in the next section---but you do throw away information about which context the expression was supposed to be evaluated in. Consider the example below:
+
+```{r}
+f <- function(x) function(y = x) substitute(y)
+g <- f(2)
+g()
+x <- 4
+g(x)
+```
+
+In the first call to `g`, `y` has its default parameter, which is the one it gets from its closure, so it substitutes to the `x` that has the value 2. In the second call, however, we have the expression `x` from the global environment where `x` is 4. In both cases, however, we just have the expression `quote(x)`. From inside R, there is no mechanism for getting the environment out of a promise, so you cannot write code that modifies input expressions and then evaluate them in the enclosing scope for default parameters and the calling scope for function arguments.
+
+You also have to be a little careful when you use `substitute` in functions that are called with other functions. The expression you get when you `substitute` is the exact expression a function gets called with. This expression doesn't propagate through other functions. In the example below, we call the function `g` with the expression `x + y`, but since `g` calls `f` with `expr`, that is what we get in the substitution.
+
+```{r}
+f <- function(expr) substitute(expr)
+f(x + y)
+g <- function(expr) f(expr)
+g(x + y)
+
+x <- 2; y <- 3
+eval(f(x + y))
+eval(g(x + y))
+```
+
+The `substitute` function is harder to use safely and correctly than is using `bquote` and explicitly modifying `call` objects, but it is the function you need to use to implement non-standard evaluation.
 
 ## Non-standard evaluation
+
+Non-standard evaluation refers to any evaluation that doesn't follow the rules for how you evaluate expressions in the local evaluation environment.
