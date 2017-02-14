@@ -180,7 +180,34 @@ g <- function(d, expr) my_with_q(d, substitute(expr))
 g(d, x + y)
 my_with(d, x + y)
 
+make_param_names <- function(params) {
+  param_names <- names(params)
+  if (is.null(param_names)) param_names <- rep("", length(params))
+  for (i in seq_along(param_names)) {
+    if (param_names[i] == "") {
+      param_names[i] <- paste(params[[i]])
+    }
+  }
+  param_names
+}
 
+make_macro <- function(..., body) {
+  body <- substitute(body)
+  params <- substitute(alist(...))[-1]
+  param_names <- make_param_names(params)
+  f <- eval(substitute(
+    function() eval(substitute(body), parent.frame())
+  ))
+  names(params) <- param_names
+  params <- as.list(params)
+  formals(f) <- params
+  f
+}
+
+set_NA_val <- make_macro(df, var, na_val, body = {df$var[df$var == na_val] <- NA})
+(d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)))
+set_NA_val(d, x, -9); d
+set_NA_val(d, y, -9); d
 
 d <- data.frame(x = 1:2, y = 3:4)
 macro_q <- function(expr, ...) {

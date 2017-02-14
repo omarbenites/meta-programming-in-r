@@ -331,7 +331,121 @@ my_with(d, x + y)
 
 ### Writing macros with NSE
 
+Since NSE allows you to evaluate expressions in the calling scope, you can use it write macros, that is, functions that work as short-cuts for statements where they are called. These differ from functions, that cannot generally modify data outside of their own scope, and I will not recommend using them unless you have very good reasons to---the immutability of data is a very important feature of R and violating it with macros goes against this---but because it is a good example of what you can do with NSE I will include the example here.
+
+Consider the code below. This example is a modified implementation of the macro code presented in [*Programmer's Niche: Macros in R*(https://www.r-project.org/doc/Rnews/Rnews_2001-3.pdf) by Thomas Lumley, R Journal, 2001]. I have simplified the macro making function a bit; you can see the full version in the original article online.
+
+```{r}
+make_param_names <- function(params) {
+  param_names <- names(params)
+  if (is.null(param_names))
+    param_names <- rep("", length(params))
+  for (i in seq_along(param_names)) {
+    if (param_names[i] == "") {
+      param_names[i] <- paste(params[[i]])
+    }
+  }
+  param_names
+}
+
+make_macro <- function(..., body) {
+  params <- eval(substitute(alist(...)))
+  body <- substitute(body)
+  
+  # Construct macro
+  f <- eval(substitute(
+    function() eval(substitute(body), parent.frame())
+  ))
+
+  # Set macro arguments
+  param_names <- make_param_names(params)
+  names(params) <- param_names
+  params <- as.list(params)
+  formals(f) <- params
+  
+  f
+}
+```
+
+The first function simply extracts the names from a list of function parameters and make sure that all parameters actually have a name. This is necessary later, when we construct the `formals` list of a function. In a `formals` list, all parameters must have a name, and we construct these names with this function. The second function is the interesting one. Here we construct a macro by constructing a function whose body will be evaluated in its calling scope. We first get hold of the parameters and body the macro should have. The parameters we get into an `list` by substituting `...` in and then evaluating the `alist(...)` expression. Without the substitution we would get the argument list that just contains `...` but with the substitution we get the arguments that are passed to the `make_macro` function, except for the named argument `body` that we just translate into the expression passed to the `make_macro` with another `substitute` call.
+
+The function we construct is where the magic happens. We create the expression 
+
+```r
+substitute(function() eval(substitute(body), parent.frame()))
+```
+
+where `body` will be replaced with the expression we pass to the macro. When we evaluate this, we get the function
+
+```r
+function() eval(substitute(<body>), parent.frame())
+```
+
+where `<body>` is not the symbol `body` but the `body` expression. This is a function that doesn't take any arguments (yet) but will substitute variables in `<body>` that are known in its calling scope---the `parent.frame()`---before evaluating the resulting expression.
+
+We can see this in action with this small example:
+
+```{r}
+(m <- make_macro(body = x + y))
+```
+
+When we call `m` it will evaluate `x + y` in its calling scope, so we can set the variables `x` and `y` in the global scope and evaluate it thus:
+
+```{r}
+x <- 2; y <- 4
+m()
+```
+
+The last part of the `make_macro` code sets the formal arguments of the macro. It simply takes the parameters we have specified, make sure they all have a name, and then make them into a list and sets `formals(f)`. After that, `make_macro` returns the constructed function.
+
+We can use this function to create a macro that replaces specific values in a column in a data frame with `NA` like this:
+
+```{r}
+set_NA_val <- make_macro(df, var, na_val, 
+                         body = { df$var[df$var == na_val] <- NA })
+```
+
+The macro we construct takes three parameters, the data frame, `df`, the variable (column) in the data frame, `var`, and the value that corresponds to `NA`, `na_val`. Its body then is the expression
+
+```r
+df$var[df$var == na_val] <- NA
+```
+
+with `df`, `var`, and `na_val` replaced by the arguments passed to the macro. We can use it like this:
+
+```{r}
+(d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)))
+set_NA_val(d, x, -9); d
+set_NA_val(d, y, -9); d
+```
+
+Here, we see that the constructed `set_NA_val` macro modifies a data frame in the calling scope. It saves some boilerplate code from being written, but at the cost of keeping parameter values immutable. The more traditional function solution where you return updated values is probably much more readable to most R programmers.
+
+```{r}
+set_NA_val_fun <- function(df, var, na_val) {
+  df[df[,var] == na_val, var] <- NA
+  df
+}
+(d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)))
+(d <- set_NA_val_fun(d, "x", -9))
+(d <- set_NA_val_fun(d, "y", -9))
+```
+
+Or even the `magrittr` pipeline version:
+
+```r
+library(magrittr)
+d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)) %>%
+  set_NA_val_fun("x", -9) %>% set_NA_val_fun("y", -9)
+d
+```
 
 
-## The `pryr` package
+### Modifying environments in evaluations
+
+
+
+
+## Accessing promises using the `pryr` package
+
 
