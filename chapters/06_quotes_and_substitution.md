@@ -402,7 +402,7 @@ We can use this function to create a macro that replaces specific values in a co
 
 ```{r}
 set_NA_val <- make_macro(df, var, na_val, 
-                         body = { df$var[df$var == na_val] <- NA })
+                         body = df$var[df$var == na_val] <- NA)
 ```
 
 The macro we construct takes three parameters, the data frame, `df`, the variable (column) in the data frame, `var`, and the value that corresponds to `NA`, `na_val`. Its body then is the expression
@@ -433,10 +433,10 @@ set_NA_val_fun <- function(df, var, na_val) {
 
 Or even the `magrittr` pipeline version:
 
-```r
+```{r}
 library(magrittr)
-d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)) %>%
-  set_NA_val_fun("x", -9) %>% set_NA_val_fun("y", -9)
+d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)) 
+d %<>% set_NA_val_fun("x", -9) %>% set_NA_val_fun("y", -9)
 d
 ```
 
