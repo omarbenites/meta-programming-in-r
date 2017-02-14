@@ -209,7 +209,7 @@ x <- 4
 g(x)
 ```
 
-In the first call to `g`, `y` has its default parameter, which is the one it gets from its closure, so it substitutes to the `x` that has the value 2. In the second call, however, we have the expression `x` from the global environment where `x` is 4. In both cases, however, we just have the expression `quote(x)`. From inside R, there is no mechanism for getting the environment out of a promise, so you cannot write code that modifies input expressions and then evaluate them in the enclosing scope for default parameters and the calling scope for function arguments.
+In the first call to `g`, `y` has its default parameter, which is the one it gets from its closure, so it substitutes to the `x` that has the value 2. In the second call, however, we have the expression `x` from the global environment where `x` is 4. In both cases, however, we just have the expression `quote(x)`. From inside R, there is no mechanism for getting the environment out of a promise, so you cannot write code that modifies input expressions and then evaluate them in the enclosing scope for default parameters and the calling scope for function arguments.^[In the package `pryr`, which we return to at the end of this chapter, there are functions, written in C, that does provide access to the internals of promises. Using `pryr` you *can* get hold of both the expression and associated environment of a promise. In case you really need it.]
 
 You also have to be a little careful when you use `substitute` in functions that are called with other functions. The expression you get when you `substitute` is the exact expression a function gets called with. This expression doesn't propagate through other functions. In the example below, we call the function `g` with the expression `x + y`, but since `g` calls `f` with `expr`, that is what we get in the substitution.
 
@@ -228,4 +228,110 @@ The `substitute` function is harder to use safely and correctly than is using `b
 
 ## Non-standard evaluation
 
-Non-standard evaluation refers to any evaluation that doesn't follow the rules for how you evaluate expressions in the local evaluation environment.
+Non-standard evaluation refers to any evaluation that doesn't follow the rules for how you evaluate expressions in the local evaluation environment. When we use `eval` to evaluate a function argument in an environment other than the default, which is what we get from a call to `environment()`, we are evaluating an expression in a non-standard way.
+
+Typical uses of non-standard evaluation, or NSE, are evaluating expressions in the calling scope, which we have already seen examples of, and evaluating expressions in data frames. We have already seen that we can use a list to provide a variable to value mapping when using `substitute`, but we can also do the same when using `eval`.
+
+```{r}
+eval(quote(x + y), list(x = 2, y = 3))
+```
+
+Since a data frame is just a list with vector elements of the same length, we can also evaluate expressions in the context of these.
+
+```{r}
+d <- data.frame(x = 1:2, y = 3:3)
+eval(quote(x + y), d)
+```
+
+When we use `eval` this way, where we explicitly quote the expression, we are not really doing NSE. The quoted expression would not be evaluated in any other, standard, way. After all, we explicitly quote it, and if we didn't quote it here, `x+y` would be evaluated in the calling scope, not inside the data frame.
+
+```{r}
+x <- 2; y <-  3
+eval(x + y, d)
+```
+
+To do NSE, we have to explicitly substitute an argument so we do not evaluate the argument-promise in the calling scope, and then evaluate it in an alternative scope. For example, we can implement our own version of the `with` function like this:
+
+```{r}
+my_with <- function(df, expr) {
+  eval(substitute(expr), df)
+}
+d <- data.frame(x = rnorm(5), y = rnorm(5))
+my_with(d, x + y)
+```
+
+Here, the expression `x + y` is *not* quoted in the function call, so normally we would expect `x + y` to be evaluated in the calling scope. Because we explicitly `substitute` the argument in `my_with` this does not happen, instead we evaluate the expression in the context of the data frame. This is non-standard evaluation.
+
+The real `with` function actually works a little better than our version. If the expression we evaluate contains variables that are not found in the data frame, then it takes these variables from the calling scope. Our version can also handle variables that do not appear in the data frame, but it works slightly differently.
+
+If we use the two functions in the global scope we don't see a difference:
+
+```{r}
+z <- 1
+with(d, x + y + z)
+my_with(d, x + y + z)
+```
+
+but if we use them inside functions, we do:
+
+```{r}
+f <- function(z) with(d, x + y + z)
+f(2)
+g <- function(z) my_with(d, x + y + z)
+g(2)
+```
+
+What is going on here?
+
+Well, `eval` takes a third argument that gives the enclosing scope for the evaluation. In `my_with` we haven't provided this, so we use the default value, which is the enclosing scope where we call `eval`, which is the evaluating environment of `my_with`. We haven't defined `z` in this environment, but the enclosing scope include the global environment where we have. When we evaluate the expression in `my_with` we find `z` in the global environment. In contrast, when we use `with`, the enclosing environment is the calling environment.
+
+We can change `my_with` to have the same behaviour thus:
+
+```{r}
+my_with <- function(df, expr) {
+  eval(substitute(expr), df, parent.frame())
+}
+
+f <- function(z) with(d, x + y + z)
+f(2)
+g <- function(z) my_with(d, x + y + z)
+g(2)
+```
+
+Now, we have both typical uses of NSE: evaluating in a data frame and evaluating in the calling scope.
+
+### Non-standard evaluation from inside functions
+
+Non-standard evaluation is very hard to get right once you start using it from inside other functions. It is a convenient approach to simplify the syntax for many operations when you work with R interactively or when you write analysis pipelines in the global scope, but because substitutions tend to work verbatim on the function arguments you give functions, once arguments get passed from one function to another, NSE gets tricky.
+
+Consider the example below:
+
+```{r}
+x <- 2; y <- 3
+f <- function(d, expr) my_with(d, expr)
+f(d, x + y)
+g <- function(d, expr) my_with(d, substitute(expr))
+g(d, x + y)
+```
+
+Here, we make two attempts at using `my_with` from inside a function, and neither work as intended. In `f`, the `expr` gets evaluated in the global scope. When we use the variable inside the function, the promise gets evaluated before it is passed along to `my_with`. In `g`, we do substitute, but it is `substitute(expr)` that `my_with` sees---remember, it does not see the expression as a promise but substitutes it to get an expression---so we don't actually get the argument substituted. The NSE in `my_with` prevents this.
+
+If you want functions that do NSE, you really should write functions that work with expressions and do "normal" evaluation on those instead. We can make a version of `my_with` that expects the expression to be already quoted, which we can use in other functions, and then define `my_with` to do the NSE like this:
+
+```{r}
+my_with_q <- function(df, expr) {
+  eval(expr, df, parent.frame())
+}
+my_with <- function(df, expr) my_with_q(d, substitute(expr))
+
+g <- function(d, expr) my_with_q(d, substitute(expr))
+g(d, x + y)
+my_with(d, x + y)
+```
+
+### Writing macros with NSE
+
+
+
+## The `pryr` package
+

@@ -119,3 +119,77 @@ x <- 2; y <- 3
 eval(f(x + y))
 eval(g(x + y))
 
+x <- 2; y <- 3
+f <- function(x) promise_info(x)
+f(x + y)
+
+g <- function(x) {
+  print(promise_info(x))
+  force(x)
+  promise_info(x)
+}
+g(x + y)
+
+
+eval(quote(x + y), list(x = 2, y = 3))
+
+d <- data.frame(x = 1:2, y = 3:3)
+eval(quote(x + y), d)
+
+x <- 2; y <-  3
+eval(x + y, d)
+
+my_with <- function(df, expr) {
+  eval(substitute(expr), df)
+}
+d <- data.frame(x = rnorm(5), y = rnorm(5))
+my_with(d, x + y)
+
+z <- 1
+with(d, x + y + z)
+my_with(d, x + y + z)
+
+f <- function(z) with(d, x + y + z)
+f(2)
+g <- function(z) my_with(d, x + y + z)
+g(2)
+
+my_with <- function(df, expr) {
+  eval(substitute(expr), df, parent.frame())
+}
+
+f <- function(z) with(d, x + y + z)
+f(2)
+g <- function(z) my_with(d, x + y + z)
+g(2)
+
+
+
+x <- 2; y <- 3
+f <- function(d, expr) my_with(d, expr)
+f(d, x + y)
+g <- function(d, expr) my_with(d, substitute(expr))
+g(d, x + y)
+
+my_with_q <- function(df, expr) {
+  eval(expr, df, parent.frame())
+}
+my_with <- function(df, expr) my_with_q(d, substitute(expr))
+
+g <- function(d, expr) my_with_q(d, substitute(expr))
+g(d, x + y)
+my_with(d, x + y)
+
+
+
+d <- data.frame(x = 1:2, y = 3:4)
+macro_q <- function(expr, ...) {
+  eval(substitute(substitute(expr, list(...))))
+}
+macro <- function(expr, ...) {
+  eval(eval(substitute(macro_q(expr, ...))), parent.frame())
+}
+macro_q(d$x <- val, val = 4:5)
+d$x
+macro(d$x <- val, val = 4:5)
+d$x
