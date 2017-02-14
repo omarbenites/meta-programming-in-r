@@ -193,30 +193,42 @@ make_param_names <- function(params) {
 
 make_macro <- function(..., body) {
   body <- substitute(body)
-  params <- substitute(alist(...))[-1]
-  param_names <- make_param_names(params)
+  params <- eval(substitute(alist(...)))
+  
+  # Construct macro
   f <- eval(substitute(
     function() eval(substitute(body), parent.frame())
   ))
+
+  # Set macro arguments
+  param_names <- make_param_names(params)
   names(params) <- param_names
   params <- as.list(params)
   formals(f) <- params
+  
   f
 }
 
-set_NA_val <- make_macro(df, var, na_val, body = {df$var[df$var == na_val] <- NA})
+(m <- make_macro(body = x + y))
+x <- 2; y <- 4
+m()
+
+set_NA_val <- make_macro(df, var, na_val, 
+                         body = { df$var[df$var == na_val] <- NA })
+
 (d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)))
 set_NA_val(d, x, -9); d
 set_NA_val(d, y, -9); d
 
-d <- data.frame(x = 1:2, y = 3:4)
-macro_q <- function(expr, ...) {
-  eval(substitute(substitute(expr, list(...))))
+set_NA_val_fun <- function(df, var, na_val) {
+  df[df[,var] == na_val, var] <- NA
+  df
 }
-macro <- function(expr, ...) {
-  eval(eval(substitute(macro_q(expr, ...))), parent.frame())
-}
-macro_q(d$x <- val, val = 4:5)
-d$x
-macro(d$x <- val, val = 4:5)
-d$x
+(d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)))
+(d <- set_NA_val_fun(d, "x", -9))
+(d <- set_NA_val_fun(d, "y", -9))
+
+library(magrittr)
+d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)) %>%
+  set_NA_val_fun("x", -9) %>% set_NA_val_fun("y", -9)
+d

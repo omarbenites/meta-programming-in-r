@@ -1,4 +1,4 @@
-# Substitution and non-standard evaluation
+# Working with substitutions
 
 We can take expressions and manipulate them by treating them as strings, but we can also modify them by substituting variables for expressions, we can build expressions by more advanced quoting, and we can move back and forth between strings and expressions.
 
@@ -443,8 +443,27 @@ d
 
 ### Modifying environments in evaluations
 
+The reason we can modify variables in macros is that we can modify environments. Actual values are immutable, but when we modify the data frame in the example above, we are replacing the reference in the environment to the modified data. If other variables refers to the same data frame, they will still be referring to the original version. Even with macros, we cannot *actually* modify data, but we can modify environments, and because we can evaluate expressions in environments different from the current evaluating environment, we can make it appear as if we are modifying data in the calling environment.
 
+We can see this by examining the evaluation environment explicitly when we evaluate an assignment. If we explicitly make an environment and evaluate an assignment in it, we see that it gets modified.
 
+```{r}
+e <- list2env(list(x = 2, y = 3))
+eval(quote(z <- x + y), e)
+as.list(e)
+```
+
+This environment has the global environment as its parent. Don't try this with the empty environment as its parent. If you do, it won't know the `<-` function. What we see here, is that we modify `e` by setting the variable `z`.
+
+We can also evaluate expressions in lists, so we can attempt the same here:
+
+```{r}
+l <- list(x = 2, y = 3)
+eval(quote(z <- x + y), l)
+l
+```
+
+Here we see that the list is *not* modified. It is only environments we can modify in lists, and while we can evaluate an assignment in a list using `eval`, we cannot actually modify the list.
 
 ## Accessing promises using the `pryr` package
 
