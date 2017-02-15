@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://apple.com/itunes/importer/publication" version="publication5.0">
+    <provider>ThomasMailund</provider>
+    <book>
+        <vendor_id>10080815746</vendor_id>
+        <metadata>
+            <publication_type>book</publication_type>
+            <series_info>
+                <series>
+                    <title>Advanced Statistial Programming in R</title>
+                    <sequence_number>3</sequence_number>
+                </series>
+            </series_info>
+            <title>Meta-programming in R</title>
+            <contributors>
+                <contributor>
+                    <primary>true</primary>
+                    <name>Thomas Mailund</name>
+                    <roles>
+                        <role>author</role>
+                    </roles>
+                </contributor>
+            </contributors>
+            <languages>
+                <language type="main">eng</language>
+            </languages>
+            <number_of_pages>123</number_of_pages>
+            <subjects>
+                <subject primary="true" scheme="bisac">COM051000</subject>
+            </subjects>
+            <description format="html">&lt;i&gt;What's more fun than writing programs? Writing programs that write programs!&lt;/i&gt;&lt;br&gt;
+&lt;br&gt;
+Meta-programming means writing programs that manipulate other programs (or manipulate itself) and in the high-level programming language R, there are rich features that enable us to extend the language itself. This book tells you how!</description>
+            <publisher>Thomas Mailund</publisher>
+            <preorder_previews>true</preorder_previews>
+            <publication_date>2017-02-15</publication_date>
+            <products>
+                <product>
+                    <territory>AR</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>AU</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="AUD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>AT</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>BE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>BO</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>BR</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>BG</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CA</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="CAD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CL</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CO</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CR</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CY</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CZ</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>DK</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="DKK"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>DO</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>EC</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>SV</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>EE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>FI</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>FR</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>DE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>GR</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>GT</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>HN</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>HU</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>IE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>IT</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>JP</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="JPY"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>LV</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>LT</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>LU</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>MT</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>MX</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="MXN"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>NL</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>NZ</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="NZD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>NI</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>NO</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="NOK"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>PA</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>PY</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>PE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>PL</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>PT</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>RO</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>SK</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>SI</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>ES</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="EUR"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>SE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="SEK"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>CH</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="CHF"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>GB</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="GBP"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>US</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+                <product>
+                    <territory>VE</territory>
+                    <cleared_for_sale>true</cleared_for_sale>
+                    <price_tier>40</price_tier>
+                    <release_type>digital-only</release_type>
+                    <sales_start_date>2017-02-15</sales_start_date>
+                    <physical_list_price currency="USD"></physical_list_price>
+                    <drm_free>true</drm_free>
+                </product>
+            </products>
+        </metadata>
+        <assets>
+            <asset type="artwork">
+                <data_file>
+                    <file_name>Meta-programming_in_R.jpg</file_name>
+                    <size>2776868</size>
+                    <checksum type="md5">1ba459b83a08154fe0cc80a5260ad9e4</checksum>
+                </data_file>
+            </asset>
+            <asset type="full">
+                <data_file>
+                    <file_name>book.epub</file_name>
+                    <size>5774763</size>
+                    <checksum type="md5">2369574e5f1536e26f8141d827e6d390</checksum>
+                </data_file>
+            </asset>
+        </assets>
+    </book>
+</package>

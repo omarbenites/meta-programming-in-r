@@ -20,5 +20,5 @@ There is great flexibility in how function calls and expressions are evaluated. 
 
 There is some danger in modifying how the language evaluates function calls and expressions, of course. It makes it harder to reason about code. On the other hand, adding small embedded languages for dealing with everyday programming tasks adds expressiveness to the language that far outweighs the risks of programming confusion, as long as such meta-programming is used sparingly and in well-understood (and well documented) frameworks.
 
-In this book, you will learn how to manipulate functions and expressions, and how to evaluate expressions in non-standard ways. Prerequisites for reading this book are familiarity with functional programming, at least familiarity with higher-order functions, that is, functions that take other functions as an input or that return functions, and some familiarity with classes and generic functions.
+In this book, you will learn how to manipulate functions and expressions, and how to evaluate expressions in non-standard ways. Prerequisites for reading this book are familiarity with functional programming, at least familiarity with higher-order functions, that is, functions that take other functions as an input or that return functions.
 

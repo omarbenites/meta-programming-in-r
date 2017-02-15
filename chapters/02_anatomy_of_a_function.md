@@ -1,6 +1,6 @@
 # Anatomy of a function
 
-Everything you do in R involves defining functions or calling functions. You cannot do any action without evaluating some function or other. Even assigning values to variables or subscripting vectors or lists involves evaluating functions. But functions are more than just recipes for how to perform different actions, they are also data objects in themselves, and we have ways of probing and modifying them.
+Everything you do in R involves defining functions or calling functions. You cannot do any action without evaluating some function or other. Even assigning values to variables or sub-scripting vectors or lists involves evaluating functions. But functions are more than just recipes for how to perform different actions, they are also data objects in themselves, and we have ways of probing and modifying them.
 
 ## Manipulating functions
 
@@ -30,7 +30,7 @@ for (param in names(parameters)) {
 }
 ```
 
-Strictly speaking it is a so-called `pairlist`, but that is an implementation detail that has no bearing on how you treat it. You can treat it as if it is a `list`.
+Strictly speaking, it is a so-called `pairlist`, but that is an implementation detail that has no bearing on how you treat it. You can treat it as if it is a `list`.
 
 ```{r}
 g <- function(x = 1, y = 2, z = 3) x + y + z
@@ -40,7 +40,7 @@ for (param in names(parameters)) {
 }
 ```
 
-For variables in this list that do not have default values, the list represents the values as the empty name. This is a special symbol that you cannot assign to, so it cannot be confused with a real value. You cannot use the `missing` function to check for a missing value in a `formals` -- that function is only useful inside a function call, and in any case there is a difference between a missing parameter and one that doesn't have a default value -- but you can always check if the value is the empty symbol.
+For variables in this list that do not have default values, the list represents the values as the empty name. This is a special symbol that you cannot assign to, so it cannot be confused with a real value. You cannot use the `missing` function to check for a missing value in a `formals`---that function is only useful inside a function call, and in any case there is a difference between a missing parameter and one that doesn't have a default value---but you can always check if the value is the empty symbol.
 
 ```{r}
 g <- function(x, y, z = 3) x + y + z
@@ -76,21 +76,21 @@ g <- function(x) {
 body(g)
 ```
 
-When a function is called, R sets up an environment for it to evaluate this expression in; this environment is called the *evaluation environment* for the function call. The evaluation environment is first populated with values for the function's formal parameters, either provided in the function call or given as default parameters, and then the body executes inside this environment. Assignments will modify this local environment unless you use the `` `<<-` `` operator, and the result of the function is the last expression evaluated in the body. This is either the last expression in a sequence or an expression explicitly given to the `return` function.
+When a function is called, R sets up an environment for it to evaluate this expression in; this environment is called the *evaluation environment* for the function call. The evaluation environment is first populated with values for the function's formal parameters, either provided in the function call or given as default parameters and then the body executes inside this environment. Assignments will modify this local environment unless you use the `` `<<-` `` operator, and the result of the function is the last expression evaluated in the body. This is either the last expression in a sequence or an expression explicitly given to the `return` function.
 
-When we just have the body of a function as an expression we don't get this function call semantics, but we can still try to evaluate the expression.
+When we just have the body of a function as an expression, we don't get this function call semantics, but we can still try to evaluate the expression.
 
 ```{r}
 eval(body(f))
 ```
 
-It fails because we do not have a variable `x` defined anywhere. If we had a global `x` the evaluation would use that and not any function parameter, because the expression here doesn't know it is part of a function. It will be when it is evaluated as part of a call to `f` but not when we use it like this. We can give it a value for `x`, though, like this:
+It fails because we do not have a variable `x` defined anywhere. If we had a global `x`, the evaluation would use that and not any function parameter, because the expression here doesn't know it is part of a function. It will be when it is evaluated as part of a call to `f` but not when we use it like this. We can give it a value for `x`, though, like this:
 
 ```{r}
 eval(body(f), list(x = 2))
 ```
 
-The `eval` function evaluates an expression and use the second argument to look up parameters. You can give it an environment, and the expression will then be evaluated in it, or you can use a list. We cover how to work with expressions and how to evaluate them in the *[Expressions and environments]* chapter; for now all you have to know is that we can evaluate an expression using `eval` if the variables in the expression are either found in the scope where we call `eval` or provided in the second argument to `eval`.
+The `eval` function evaluates an expression and uses the second argument to look up parameters. You can give it an environment, and the expression will then be evaluated in it, or you can use a list. We cover how to work with expressions and how to evaluate them in the *[Expressions and environments]* chapter; for now all you have to know is that we can evaluate an expression using `eval` if the variables in the expression are either found in the scope where we call `eval` or provided in the second argument to `eval`.
 
 We can also set `x` as a default parameter and use that when we evaluate the expression:
 
@@ -100,7 +100,7 @@ formals(f)
 eval(body(f), formals(f))
 ```
 
-Things get a little more complicated if default parameters refer to each other. This has to do with the evaluation environment is set up and not so much with how expressions are evaluated, but consider an example where one default parameter refers to another. 
+Things get a little more complicated if default parameters refer to each other. This has to do with the evaluation environment is set up and not so much with how expressions are evaluated but consider an example where one default parameter refers to another. 
 
 ```{r}
 f <- function(x = y, y = 5) x + y
@@ -124,9 +124,9 @@ Formal arguments are not evaluated this way when we call a function. They are tr
 
 > When a function is called, each formal argument is assigned a promise in the local environment of the call with the expression slot containing the actual argument (if it exists) and the environment slot containing the environment of the caller. If no actual argument for a formal argument is given in the call and there is a default expression, it is similarly assigned to the expression slot of the formal argument, but with the environment set to the local environment.
 
-What it means is that in the evaluating environment R first assign all variables to these "promises". The promises are place-holders for values but represented as expressions we haven't evaluated yet. As soon as you access them, though, they *will* be evaluated (and R will remember the value). For default parameters the promises will be evaluated in the evaluating environment and for parameters parsed to the function in the function call the promises will be evaluated in the calling scope.
+What it means is that in the evaluating environment R first assign all variables to these "promises". The promises are place-holders for values but represented as expressions we haven't evaluated yet. As soon as you access them, though, they *will* be evaluated (and R will remember the value). For default parameters, the promises will be evaluated in the evaluating environment, and for parameters passed to the function in the function call the promises will be evaluated in the calling scope.
 
-Since all the promises are unevaluated expressions we don't have to worry about the order in which we assign the variables. As long as the variables exist when we evaluate a promise we are fine, and as long as there are no circular dependencies between the expressions we can figure out all the values when we need them.
+Since all the promises are unevaluated expressions, we don't have to worry about the order in which we assign the variables. As long as the variables exist when we evaluate a promise we are fine, and as long as there are no circular dependencies between the expressions we can figure out all the values when we need them.
 
 Don't make circular dependencies. Don't do something like this:
 
@@ -145,7 +145,7 @@ for (param in names(parameters)) {
 eval(body(f), fenv)
 ```
 
-Here we assign the expression `y` to variable `x` and the value 5 to variable `y`. Basic values like a numeric vector are not handled as unevaluated expressions. They could be, but there is no point. So before we evaluate the body of `f` the environment has `y` pointing to 5 and `x` pointing to the expression `y`, wrapped as a promise that says that the expression should be evaluated in `fend` when we need to know the value of `y`.
+Here we assign the expression `y` to variable `x` and the value 5 to variable `y`. Primitive values like a numeric vector are not handled as unevaluated expressions. They could be, but there is no point. So before we evaluate the body of `f`, the environment has `y` pointing to 5 and `x` pointing to the expression `y`, wrapped as a promise that says that the expression should be evaluated in `fend` when we need to know the value of `y`.
 
 
 ### Function environments
@@ -154,9 +154,9 @@ The environment of a function is the simplest of its components. It is just the 
 
 ## Calling a function
 
-Before we continue, it might be worthwhile to see how these components fit together when a function is called. I explained this in some detail in *Functional Programming in R* but it is essential to know in order to understand how expressions are evaluated. When we start to fiddle around with non-standard evaluation it becomes even more important. So it bears repeating.
+Before we continue, it might be worthwhile to see how these components fit together when a function is called. I explained this in some detail in *Functional Programming in R* but it is essential to know to understand how expressions are evaluated. When we start to fiddle around with non-standard evaluation, it becomes even more important. So it bears repeating.
 
-When expressions are evaluated, they are evaluated in an environment. Environments are chained in a tree-structure. Each environment has a "parent," and when R needs to look up a variable, it first look in the current environment to see if that environment holds the variable. If it doesn't, R will look in the parent. If it doesn't find it there either, it will look in the grandparent, and it will continue going up the tree until it either finds the variable or hits the global environment and see that it isn't there, at which point it will raise an error. We call the variables an expression can find by searching this way its scope. Since the search always picks the first place it finds a given variable, local variables overshadow global variables, and while several environments on this parent-chain might contain the same variable name, only the inner-most environment, the first we find, will be used.
+When expressions are evaluated, they are evaluated in an environment. Environments are chained in a tree-structure. Each environment has a "parent," and when R needs to look up a variable, it first looks in the current environment to see if that environment holds the variable. If it doesn't, R will look in the parent. If it doesn't find it there either, it will look in the grandparent, and it will continue going up the tree until it either finds the variable or hits the global environment and see that it isn't there, at which point it will raise an error. We call the variables an expression can find by searching this way its scope. Since the search always picks the first place it finds a given variable, local variables overshadow global variables, and while several environments on this parent-chain might contain the same variable name, only the inner-most environment, the first we find, will be used.
 
 When a function, `f`, is created, it gets associated `environment(f)`. This environment is the environment where `f` is defined.  When `f` is invoked, R creates an evaluation environment for `f`, let's call it `evalenv`. The parent of `evalenv` is set to `environment(f)`. Since `environment(f)` is the environment where `f` is defined, having it as the parent of the evaluation environment means that the body of `f` can see its enclosing scope if `f` is a closure.
 
@@ -182,13 +182,13 @@ calling <- function() {
 calling()
 ```
 
-We start out in the global environment where we define `enclosing` to be a function. When we call `enclosing` we create an evaluation environment in which we store the variable `z` and then return a function which we store in the global environment as `f`. Since this function was defined in the evaluation environment of `enclosing`, this environment is the `environment` of `f`.
+We start out in the global environment where we define `enclosing` to be a function. When we call `enclosing`, we create an evaluation environment in which we store the variable `z` and then return a function which we store in the global environment as `f`. Since this function was defined in the evaluation environment of `enclosing`, this environment is the `environment` of `f`.
 
-Then we create `calling` and store that in the global environment and call it. This create, once again, an evaluation environment. In this we store the variable `w` and then call `f`. We don't have `f` in the evaluation environment, but because the parent of the evaluation environment is the global environment we can find it. When we call `f` we give it the expression `2 * w` as parameter `x`.
+Then we create `calling` and store that in the global environment and call it. This creates, once again, an evaluation environment. In this, we store the variable `w` and then call `f`. We don't have `f` in the evaluation environment, but because the parent of the evaluation environment is the global environment we can find it. When we call `f` we give it the expression `2 * w` as parameter `x`.
 
-Inside the call to `f` we have another evaluation environment. Its parent is the closer we got from `enclosing`. Here we need to evaluate `f`'s body: `x + y + z`, but before that the evaluation environment needs to be set up. Since `x` and `y` are formal parameters, they will be stored in the evaluation environment as promises. We provided `x` as a parameter when we called `f`, so this promise must be evaluated in the calling environment -- the environment inside `calling` -- while `y` has the default value so it must be evaluated in the evaluation environment. In this environment it can see `x` and `y` and through the parent environment `z`. We evaluate `x`, which is the expression `2 * w` in the calling environment, where `w` is known and `y` in the local environment where `x` is know, so we can get the value of those two variables, and then from the enclosing environment `z`.
+Inside the call to `f`, we have another evaluation environment. Its parent is the closer we got from `enclosing`. Here we need to evaluate `f`'s body: `x + y + z`, but before that the evaluation environment needs to be set up. Since `x` and `y` are formal parameters, they will be stored in the evaluation environment as promises. We provided `x` as a parameter when we called `f`, so this promise must be evaluated in the calling environment -- the environment inside `calling` -- while `y` has the default value so it must be evaluated in the evaluation environment. In this environment, it can see `x` and `y` and through the parent environment `z`. We evaluate `x`, which is the expression `2 * w` in the calling environment, where `w` is known and `y` in the local environment where `x` is known, so we can get the value of those two variables, and then from the enclosing environment `z`.
 
-We can try to emulate all this using explicit environments and `delayedAssign` to store promises. We need three environments since we don't actually need to simulate the global environment for this. We need the environment where the `f` function was defined, we call it `defend`, then we need the evaluating environment for the call to `f`, and we need the environment in which `f` is called.
+We can try to emulate all this using explicit environments and `delayedAssign` to store promises. We need three environments since we don't need to simulate the global environment for this. We need the environment where the `f` function was defined; we call it `defenv`, then we need the evaluating environment for the call to `f`, and we need the environment in which `f` is called.
 
 ```{r}
 defenv <- new.env()
@@ -210,7 +210,7 @@ In the calling environment we save the value of `w`:
 callenv$w <- 5
 ```
 
-In the evaluation environment we set up the promises. The `delayedAssign` function takes two environments as arguments. The first is the environment where the promise should be evaluated and the second where it should be stored. For `x` we want the expression to be evaluated in the calling environment and for `y` we want it to be evaluated in the evaluation environment. Both variables should be stored in the evaluation environment.
+In the evaluation environment, we set up the promises. The `delayedAssign` function takes two environments as arguments. The first is the environment where the promise should be evaluated and the second where it should be stored. For `x` we want the expression to be evaluated in the calling environment, and for `y` we want it to be evaluated in the evaluation environment. Both variables should be stored in the evaluation environment.
 
 ```{r}
 delayedAssign("x", 2 * w, callenv, evalenv)
@@ -229,7 +229,7 @@ There is surprisingly much going on behind a function call, but it all follows t
 
 ## Modifying functions
 
-We can do more than just inspect functions. The three functions for inspecting also come in assignment versions and we can use those to change the three components of a function. If we go back to our simple definition of `f`
+We can do more than just inspect functions. The three functions for inspecting also come in assignment versions, and we can use those to change the three components of a function. If we go back to our simple definition of `f`
 
 ```{r}
 f <- function(x) x
@@ -249,9 +249,9 @@ where, with a default value for `x`, we can evaluate its body in the environment
 eval(body(f), formals(f))
 ```
 
-I will stress again, though, that evaluating a function is not quite as simple as evaluating its body in the context of its formals. It doesn't matter that we change a function's formal arguments outside of its definition, when the function is invoked the formal arguments will still be evaluated in the context where the function was defined.
+I will stress again, though, that evaluating a function is not quite as simple as evaluating its body in the context of its formals. It doesn't matter that we change a function's formal arguments outside of its definition when the function is invoked the formal arguments will still be evaluated in the context where the function was defined.
 
-If we define a closure we can see this in action.
+If we define a closure, we can see this in action.
 
 ```{r}
 nested <- function() {
@@ -261,29 +261,29 @@ nested <- function() {
 f <- nested()
 ```
 
-Since `f` was defined inside the evaluating environment of `nested`, its `environment(f)` will be that environment. When we call it, it will therefore be able to see the local variable `y` from `nested`. It doesn't refer to that, but we can change this by modifying its formals
+Since `f` was defined inside the evaluating environment of `nested`, its `environment(f)` will be that environment. When we call it, it will, therefore, be able to see the local variable `y` from `nested`. It doesn't refer to that, but we can change this by modifying its formals
 
 ```{r}
 formals(f) <- list(x = quote(y))
 f
 ```
 
-Here, we have to use the function `quote` to make `y` a name. If we didn't, we would get an error or we would get a reference to a `y` in the global environment. In function definitions, default arguments are automatically quoted to turn them into expressions, but when we modify `formals` we have to do this explicitly.
+Here, we have to use the function `quote` to make `y` a name. If we didn't, we would get an error, or we would get a reference to a `y` in the global environment. In function definitions, default arguments are automatically quoted to turn them into expressions, but when we modify `formals`, we have to do this explicitly.
 
-If we now call `f` without arguments, `x` will take its default value as specified by `formals(f)`, that is, it will refer to `y`. Since this is a default argument it will be turned into a promise that will be evaluated in `f`'s evaluation environment. There is no local variable named `y` so R will look in `environment(f)` for `y` and find it inside the `nested` environment.
+If we now call `f` without arguments, `x` will take its default value as specified by `formals(f)`, that is, it will refer to `y`. Since this is a default argument, it will be turned into a promise that will be evaluated in `f`'s evaluation environment. There is no local variable named `y`, so R will look in `environment(f)` for `y` and find it inside the `nested` environment.
 
 ```{r}
 f()
 ```
 
-Just because we modified `formals(f)` in the global environment we do not change in which environment R evaluates promises for default parameters. If we have a global `y`, the `y` in `f`'s formals still refer to the one in `nested`.
+Just because we modified `formals(f)` in the global environment, we do not change in which environment R evaluates promises for default parameters. If we have a global `y`, the `y` in `f`'s formals still refer to the one in `nested`.
 
 ```{r}
 y <- 2
 f()
 ```
 
-Of course, if we actually provide `y` as a parameter when calling `f` things change. Now it is will be a promise that should be evaluated in the calling environment, so in that case we get a reference to the global `y`.
+Of course, if we provide `y` as a parameter when calling `f` things change. Now it will be a promise that should be evaluated in the calling environment, so in that case, we get a reference to the global `y`.
 
 ```{r}
 f(x = y)
@@ -351,19 +351,19 @@ If we define a function `f` like this:
 f <- function(x) x + y
 ```
 
-it takes one parameter, `x`, and add it to a global parameter `y`. If, instead, we want `y` to be a parameter, but not give it a default value, we could try something like this:
+it takes one parameter, `x`, and add it to a global parameter `y`. If instead, we want `y` to be a parameter, but not give it a default value, we could try something like this:
 
 ```r
 formals(f) <- list(x =, y =)
 ```
 
-This will not work, however, because `list` doesn't like empty values. Instead, you can use `alist`. This function creates a pair-list, a data structure used internally in R for formal arguments. It is the only thing this data structure is really used for, but if you start hacking around with modifying parameters of a function, it is the one to use.
+This will not work, however, because `list` doesn't like empty values. Instead, you can use `alist`. This function creates a pair-list, a data structure used internally in R for formal arguments. It is the only thing this data structure is used for, but if you start hacking around with modifying parameters of a function, it is the one to use.
 
 ```{r}
 formals(f) <- alist(x =, y =)
 ```
 
-Using `alist`, expressions are also automatically quoted. In the example above where we wanted the parameter `x` to default to `y` we needed to use `quote(y)` to keep `y` as a promise to be evaluated in `environment(f)` rather than the calling scope. With `alist`, we do not have to quote `y`.
+Using `alist`, expressions are also automatically quoted. In the example above where we wanted the parameter `x` to default to `y`, we needed to use `quote(y)` to keep `y` as a promise to be evaluated in `environment(f)` rather than the calling scope. With `alist`, we do not have to quote `y`.
 
 ```{r}
 nested <- function() {
@@ -392,7 +392,7 @@ Don't try to use a `list` here; it doesn't do what you want.
 f <- as.function(list(x = 2, y = 2, x + y))
 ```
 
-If you give `as.function` a list it interprets that as just an expression that then becomes the body of the new function. Here, if you have global definitions of `x` and `y` so you can evaluate `x + y`, you would get a body that is `c(2, 2, x+y)` where `x+y` refers to the value, not the expression, of the sum of global variables `x` and `y`.
+If you give `as.function` a list, it interprets that as just an expression that then becomes the body of the new function. Here, if you have global definitions of `x` and `y` so you can evaluate `x + y`; you would get a body that is `c(2, 2, x+y)` where `x+y` refers to the value, not the expression, of the sum of global variables `x` and `y`.
 
 The environment of the new function is by default the environment in which we call `as.function`. So to make a closure, we can just call `as.function` inside another function. 
 
@@ -414,7 +414,7 @@ nested <- function(y) {
 }
 ```
 
-Remember that expressions that are default parameters are lazy evaluated inside the body of the function we define. Here, we say that `y` should evaluate to `y` which is a circular dependency. It has nothing to do with `as.function`, really, you have the same problem in this definition:
+Remember that expressions that are default parameters are lazily evaluated inside the body of the function we define. Here, we say that `y` should evaluate to `y` which is a circular dependency. It has nothing to do with `as.function` you have the same problem in this definition:
 
 ```{r}
 nested <- function(y) {

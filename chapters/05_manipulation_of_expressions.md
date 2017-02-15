@@ -1,6 +1,6 @@
 # Manipulating expressions
 
-Expressions, the kind we create using the `quote` function, come in four flavours: a primitive value, a name, a function call or a control structure, or a *pairlist*. Function calls includes operators such as the arithmetic or logical operators as these are function calls as well in R, and control structures can be considered just a special kind of function calls---they only really differ from function calls in the syntax you use to invoke them.
+Expressions, the kind we create using the `quote` function, come in four flavours: a primitive value, a name, a function call or a control structure, or a *pairlist*. Function calls include operators such as the arithmetic or logical operators as these are function calls as well in R, and control structures can be considered just a special kind of function calls---they only really differ from function calls in the syntax you use to invoke them.
 
 ```{r}
 class(quote(1))
@@ -13,7 +13,7 @@ class(quote(if (TRUE) "foo" else "bar"))
 class(quote(for (x in 1:3) x))
 ```
 
-Of these, the calls and control structures are of course the more interesting; values and symbols are pretty simple and we cannot do a lot with them. Pairlists are used for dealing with function parameters, so unless we are working with function arguments we won't see them in expressions. Calls and control structures, on the other hand, capture the action in an expression; we can treat these as lists and we can thus examine them and modify them.^[To the extend that we can modify data in R; we are of course creating new objects with replacement operators.] Working with expressions this way is, I believe, the simplest approach and is the topic of this chapter. Substituting values for variables is another, complementary, way that is the topic of the next chapter.
+Of these, the calls and control structures are of course the more interesting; values and symbols are pretty simple, and we cannot do a lot with them. Pairlists are used for dealing with function parameters, so unless we are working with function arguments, we won't see them in expressions. Calls and control structures, on the other hand, capture the action in an expression; we can treat these as lists, and we can thus examine them and modify them.^[To the extent that we can modify data in R; we are of course creating new objects with replacement operators.] Working with expressions this way is, I believe, the simplest approach and is the topic of this chapter. Substituting values for variables is another, complementary, way that is the topic of the next chapter.
 
 After we have learned the basics of expressions in the next section, the rest of the chapter will go through some potential real-life examples of how we would use meta-programming. You can find a full version of the examples in the `dfdr` package on [GitHub](https://github.com/mailund/dfdr).
 
@@ -23,7 +23,7 @@ Both function calls and control structures can be manipulated as lists. Of those
 
 ### Accessing and manipulating control structures
 
-Statements involving control structures are expressions like any other expression in R, and we can create an unevaluated version of them using `quote`. As I explained above, we can then treat this expression object as a list. So we can get the length of the object and we can get access to the elements in the object. For a single `if`-statement we get expressions of length 3 while for `if-else`-statements we get expressions of length 4. The first element is the name `if`. For all control structures and function calls, the first element will always be the name of the function, so if you think of control structures as just functions with a slightly weird syntax, you don't have to consider them a special case at all.^[They basically *are* just special cases of calls. The `is.call` function will return `TRUE` for them, and there is no difference in how you can treat them. The only difference is in the syntax for how you write control-structure expressions compared to function calls.] The second element is the test-condition in the `if`-statement, and after that you get body of the statement. If it is an `if-else`-statement, the fourth element is the `else` part of the expression.
+Statements involving control structures are expressions like any other expression in R, and we can create an unevaluated version of them using `quote`. As I explained above, we can then treat this expression object as a list. So we can get the length of the object, and we can get access to the elements in the object. For a single `if`-statement we get expressions of length three while for `if-else`-statements we get expressions of length four. The first element is the name `if`. For all control structures and function calls, the first element will always be the name of the function, so if you think of control structures as just functions with a slightly weird syntax, you don't have to consider them a special case at all.^[They basically *are* just special cases of calls. The `is.call` function will return `TRUE` for them, and there is no difference in how you can treat them. The only difference is in the syntax for how you write control-structure expressions compared to function calls.] The second element is the test condition in the `if`-statement, and after that, you get the body of the statement. If it is an `if-else`-statement, the fourth element is the `else` part of the expression.
 
 ```{r}
 x <- quote(if (foo) bar)
@@ -40,7 +40,7 @@ y[[3]]
 y[[4]]
 ```
 
-With `for`-loops you get an expression of length 4 where the first element is, of course, the name `for`, the second is the iteration variable, the third the expression we iterate over and the fourth the loop body.
+With `for`-loops you get an expression of length four where the first element is, of course, the name `for`, the second is the iteration variable, the third the expression we iterate over and the fourth the loop body.
 
 ```{r}
 z <- quote(for (x in 1:4) print(x))
@@ -113,7 +113,7 @@ eval(x)
 
 I didn't quote the zero in the last assignment; I didn't have to since numeric values are already expressions and do not need to be quoted.
 
-To explore an expression we usually need a recursive function. The two basic cases in a recursion are then `is.atomic`---for values---and `is.name`---for symbols---and the recursive cases are `is.call` for function calls and `is.pairlist` if we want to deal with those. In the function below, that just prints the structure of an expression, I do not bother.
+To explore an expression, we usually need a recursive function. The two basic cases in a recursion are then `is.atomic`---for values---and `is.name`---for symbols---and the recursive cases are `is.call` for function calls and `is.pairlist` if we want to deal with those. In the function below, that just prints the structure of an expression, I do not bother.
 
 ```{r}
 f <- function(expr, indent = "") {
@@ -138,13 +138,13 @@ f <- function(expr, indent = "") {
 f(quote(2 + 3*(x + y)))
 ```
 
-You might find the output here a little odd, but it captures the structure of the expression `2+3*(x+y)`. The outmost function call is of the function `+` and it has two arguments, the number 2 and the call to `*`. The call to `*` also has two arguments---naturally---where one is 3 and the other is a call to the function `(`. If you find this odd, then welcome to the club, but parentheses are functions in R. The call to `(` only has a single argument which happens to be a function call to `+` with the arguments `x` and `y`.
+You might find the output here a little odd, but it captures the structure of the expression `2+3*(x+y)`. The outermost function call is the function `+`, and it has two arguments, the number 2 and the call to `*`. The call to `*` also has two arguments---naturally---where one is 3 and the other is a call to the function `(`. If you find this odd, then welcome to the club, but parentheses are functions in R. The call to `(` only has a single argument which happens to be a function call to `+` with the arguments `x` and `y`.
 
 This is all there is to the direct manipulation of function calls, but of course, the is much that can be done with these simple tools and the following sections will show how you can use them to achieve powerful effects.
 
 ## Expression simplification
 
-To see manipulation of expressions in action we consider a scenario where we want to simplify expression. We want to evaluate sub-expressions that we can immediately evaluate, because they only consist of atomic values where we do not depend on variables, and we want to reduce multiplication by one or addition by zero. Something like this:
+To see the manipulation of expressions in action we consider a scenario where we want to simplify an expression. We want to evaluate sub-expressions that we can immediately evaluate, because they only consist of atomic values where we do not depend on variables, and we want to reduce multiplication by one or addition by zero. Something like this:
 
 ```r
 simplify_expr(quote(2*(0 + ((4 + 5)*x)*1)))
@@ -171,7 +171,7 @@ simplify_expr <- function(expr) {
 }
 ```
 
-For call simplification, I don't actually attempt to simplify function calls. I don't know what any generic function is doing, so there is little I can do to simplify expressions that involve functions. I will assume, though, that if I am simplifying an expression, then functions in it behave as if they had call-by-value semantics and simplify their arguments. This is an assumption, it might be wrong, but for this exercises I will assume it. So for general function calls I will just simplify their arguments. For arithmetic expressions, I will try to simplify those further. I could also attempt to do that for other operations, but handling just the arithmetic operators show how we would handle operators in sufficient detail that I trust you, dear reader, to be able to handle other operators if you need to.
+For call simplification, I don't attempt to simplify function calls. I don't know what any generic function is doing, so there is little I can do to simplify expressions that involve functions. I will assume, though, that if I am simplifying an expression, then functions in it behave as if they had call-by-value semantics and simplify their arguments. This is an assumption, it might be wrong, but for this exercises, I will assume it. So for general function calls, I will just simplify their arguments. For arithmetic expressions, I will try to simplify those further. I could also attempt to do that for other operations, but handling just the arithmetic operators show how we would handle operators in sufficient detail that I trust you, dear reader, to be able to handle other operators if you need to.
 
 Call handling can then look like this:
 
@@ -224,7 +224,7 @@ simplify_addition <- function(f, g) {
 }
 ```
 
-Unary minus we can just evaluate if its argument is numeric, otherwise we can get rid of an existing minus in the argument, since two minuses make a plus, and if all else fails we just have to return the simplified expression with a minus in front of it:
+Unary minus we can just evaluate if its argument is numeric. Otherwise, we can get rid of an existing minus in the argument since two minuses make a plus, and if all else fails we just have to return the simplified expression with a minus in front of it:
 
 ```{r}
 simplify_unary_subtraction <- function(f) {
@@ -238,7 +238,7 @@ simplify_unary_subtraction <- function(f) {
 }
 ```
 
-For the final case, here, we use the function `bquote`. It works similar to `quote` but substitutes a value in where we put `.(...)`. So we essentially write `quote(-simplified)` except that we actually put the simplified expression inside the expression. 
+For the final case, here, we use the function `bquote`. It works similar to `quote` but substitutes a value in where we put `.(...)`. So we essentially write `quote(-simplified)` except that we put the simplified expression inside the expression. 
 
 Binary subtraction is similar to addition but with a little more work when we subtract from zero. Here we need to use `bquote` again:
 
@@ -260,7 +260,7 @@ simplify_subtraction <- function(f, g) {
 }
 ```
 
-For multiplication we can simplify cases where the multiplication involves zero or one, but otherwise the function looks very similar to what we have seen before:
+For multiplication, we can simplify cases where the multiplication involves zero or one, but otherwise, the function looks very similar to what we have seen before:
 
 ```{r}
 simplify_multiplication <- function(f, g) {
@@ -278,7 +278,7 @@ simplify_multiplication <- function(f, g) {
 }
 ```
 
-Division and exportation is just more of the same, with different cases to handle:
+Division and exportation are just more of the same, with different cases to handle:
 
 ```{r}
 simplify_division <- function(f, g) {
@@ -304,13 +304,13 @@ simplify_exponentiation <- function(f, g) {
 }
 ````
 
-The final function we need is function-call simplification. Here we just have to simplify all the function's arguments before returning a call. We can collect the arguments in a list and create a function call with an expression like:
+The final function we need is a function-call simplification. Here we just have to simplify all the function's arguments before returning a call. We can collect the arguments in a list and create a function call with an expression like:
 
 ```r
   do.call("call", c(list(function_name), arguments))
 ```
 
-This would take the arguments, as a list, and make them into arguments in a call to `call`. This will work fine if the `function_name` is actually a function name, but expressions such as `f(x,y)(z)` are also function calls; here the function "name" is `f(x,y)` and the argument is `z`. We cannot wrap such an expression up in a call to `call`, but we can just take a list and make it into a call using `as.call`:
+This would take the arguments, as a list, and make them into arguments in a call to `call`. This will work fine if the `function_name` is a function name, but expressions such as `f(x,y)(z)` are also function calls; here the function "name" is `f(x,y)` and the argument is `z`. We cannot wrap such an expression up in a call to `call`, but we can just take a list and make it into a call using `as.call`:
 
 ```r
 simplify_function_call <- function(expr) {
@@ -323,7 +323,7 @@ simplify_function_call <- function(expr) {
 }
 ```
 
-For the same reason we actually have to remedy the `simplify_call` function. There, we compare `expr[[1]]` with names to dispatch to the various arithmetic operators. This only works if `expr[[1]]` is a name, so we have to make sure that we only do these comparisons when it is:
+For the same reason, we have to remedy the `simplify_call` function. There, we compare `expr[[1]]` with names to dispatch to the various arithmetic operators. This only works if `expr[[1]]` is a name, so we have to make sure that we only make these comparisons when it is:
 
 ```r
 simplify_call <- function(expr) {
@@ -335,7 +335,7 @@ simplify_call <- function(expr) {
 }
 ```
 
-We could also get a little more ambitions and try to evaluate functions when all their arguments are values and when we know what the functions are---or at least have a reasonable expectation that we would know. We could always check if we can find the name in a relevant environment, and if it is a function, but since we are simplify expressions where we don't expect to know variables that are not functions, it is probably too much to demand that all function symbols are known. Still, we could say that functions such as `sin` and `cos`, `exp` and `log` are their usual selves and then do something like this:
+We could also get a little more ambitious and try to evaluate functions when all their arguments are values and when we know what the functions are---or at least have a reasonable expectation that we would know. We could always check if we can find the name in a relevant environment, and if it is a function, but since we are simplifying expressions where we don't expect to know variables that are not functions, it is probably too much to demand that all function symbols are known. Still, we could say that functions such as `sin` and `cos`, `exp` and `log` are their usual selves and then do something like this:
 
 ```{r}
 simplify_function_call <- function(expr) {
@@ -361,7 +361,7 @@ We now have a simple program that lets us simplify expressions to a certain exte
 simplify_expr(quote(2*(0 + ((4 + 5)*x)*1)))
 ```
 
-Neither function-call solution can handle named arguments. We simply work with positional arguments. We simply throw away the name information.
+Neither function-call solution can handle named arguments. We simply work with positional arguments. We just throw away the name information.
 
 ```{r}
 f <- function(x, y) x
@@ -383,7 +383,7 @@ names(expr1)
 names(expr2)
 ```
 
-If we make sure that the result of our simplification gets the same name as the original expression, we will be fine:
+If we make sure that the result of our simplification gets the same name as the original expression, we will be okay:
 
 ```{r}
 simplify_function_call <- function(expr) {
@@ -410,11 +410,11 @@ eval(simplify_expr(expr2))
 
 ## Automatic differentiation
 
-As a second, only slightly more involved, example, we consider *automatic differentiation:* automatically translating a function that computes an expression into a function that computes the derived expression. We will assume that we have a function whose body contains only a single expression---one that doesn't involve control structures or sequences of statements but just a single arithmetic expression---and recurse through this expression, applying the rules of differentiation. Although what we do with this meta-program is more complex than the expression simplification we just implemented, you will see that the form of the program is very similar.
+As a second, only slightly more involved, example, we consider *automatic differentiation:* automatically translating a function that computes an expression into a function that calculates the derived expression. We will assume that we have a function whose body contains only a single expression---one that doesn't involve control structures or sequences of statements but just a single arithmetic expression---and recurse through this expression, applying the rules of differentiation. Although what we do with this meta-program is more complicated than the expression simplification we just implemented, you will see that the form of the program is very similar.
 
-We start with the main function, which we name `d` for differentiation. It takes two arguments: the function to be differentiated and the variable to take the derivative with respect to. If we want the function to be able to handle the built-in mathematical functions we need to handle these as special cases. These are implemented as so-called *primitive* functions and do not have a body. We need to handle them explicitly in the `d` function. For all other functions, we just need to compute the derivative of the expression in the function body. If we want to return a new function for the derivative we can just take the function we are modifying and replace its body. Since R doesn't actually let us modify arguments to a function, this will just create a copy we can return and leave the original function intact. Reusing the argument this way make sure that the new function has the same arguments, with the same names and same default values, as the original. It also ensures that the derivative will have the same enclosing environment as the original function, which is potentially important for when we evaluate it.
+We start with the main function, which we name `d` for differentiation. It takes two arguments: the function to be differentiated and the variable to take the derivative on. If we want the function to be able to handle the built-in mathematical functions we need to handle these as special cases. These are implemented as so-called *primitive* functions and do not have a body. We need to handle them explicitly in the `d` function. For all other functions, we just need to compute the derivative of the expression in the function body. If we want to return a new function for the derivative, we can just take the function we are modifying and replace its body. Since R doesn't let us modify arguments to a function, this will just create a copy we can return and leave the original function intact. Reusing the argument this way make sure that the new function has the same arguments, with the same names and same default values, as the original. It also ensures that the derivative will have the same enclosing environment as the original function, which is potentially important for when we evaluate it.
 
-The `d` function can look like this, where I've only handled three of the primitive functions---you can add the remaining as an exercises:
+The `d` function can look like this, where I've only handled three of the primitive functions---you can add the remaining as an exercise:
 
 ```r
 d <- function(f, x) {
@@ -433,7 +433,7 @@ d <- function(f, x) {
 }
 ```
 
-We send the function environment along with the recursion because we will need it when we have to deal with function calls  later. There, we will need to look up functions and analyse which parameters they take in order to apply the chain rule. For now, we just pass it along in the recursion.
+We send the function environment along with the recursion because we will need it when we have to deal with function calls later. There, we will need to look up functions and analyse which parameters they take to apply the chain rule. For now, we just pass it along in the recursion.
 
 For aesthetic reasons, we simplify the expression we get from differentiating the body of `f`, using the code we wrote in the previous section. We can use `d` like this:
 
@@ -447,7 +447,7 @@ df
 
 For computing the derivative of the function body, we follow the pattern we used for the expression simplification: we write a recursive function for dealing with expressions, where we dispatch function calls to different cases for the different arithmetic operations.
 
-The two basic cases for the recursive function are numbers and names---we assume that we do not get other atomic values such as logical vectors; we wouldn't know how to differentiate them anyway. For numbers, the derivative is always zero while for names it depends on whether we have the variable we are computing the derivative with respect to or another variable. The recursive case for the function is function calls, where we just call another function to handle that case.
+The two basic cases for the recursive function are numbers and names---we assume that we do not get other atomic values such as logical vectors; we wouldn't know how to differentiate them anyway. For numbers, the derivative is always zero while for names it depends on whether we have the variable we are computing the derivative on or another variable. The recursive case for the function is function calls, where we just call another function to handle that case.
 
 ```r
 diff_expr <- function(expr, x, e) {
@@ -468,7 +468,7 @@ diff_expr <- function(expr, x, e) {
 }
 ```
 
-For calls, we dispatch based on the type of call, so we deal with arithmetic expressions through a function for each operator, we deal with parentheses similar to how we handled them in the expression simplification, and we functions for differentiating other function calls. We have to handle primitive functions and user defined functions as two separate cases here as well. For user-defined functions we can analyse these, figure out their formal arguments, and apply the chain rule. For primitive functions, `formals` will give us an empty list, so that strategy will not work for those. So we handle them as a special case. I assume, here, that we have a list of names of the primitive functions. E.g. we could have
+For calls, we dispatch based on the type of call, so we deal with arithmetic expressions through a function for each operator, we deal with parentheses similar to how we handled them in the expression simplification, and for differentiating other function calls. We have to handle primitive functions and user defined functions as two separate cases here as well. For user-defined functions, we can analyse these, figure out their formal arguments, and apply the chain rule. For primitive functions, `formals` will give us an empty list, so that strategy will not work for those. So we handle them as a special case. I assume, here, that we have a list of names of the primitive functions. E.g. we could have
 
 ```r
 .built_in_functions <- c("sin", "cos", "exp")
@@ -555,7 +555,7 @@ diff_exponentiation <- function(f, g, x, e) {
 ```
 
 
-For function calls we have to apply the chain rule. For primitive functions we cannot get a list of formal arguments so we cannot handle these by inspecting the functions; we have to use their names to figure out what their arguments and derivaties are. I've shown a few cases below, but I will leave handling other functions as an exercises for the reader.
+For function calls, we have to apply the chain rule. For primitive functions we cannot get a list of formal arguments so we cannot handle these by inspecting the functions; we have to use their names to figure out what their arguments and derivatives are. I've shown a few cases below, but I will leave handling other functions as an exercise for the reader.
 
 ```r
 diff_built_in_function_call <- function(expr, x, e) {
@@ -574,11 +574,11 @@ diff_built_in_function_call <- function(expr, x, e) {
 }
 ```
 
-For other function calls, we can inspect the function to work out which variables it has and apply the chain rules to those. This only works if we can actually figure out which function we are referring to, so we cannot handle cases where we have to compute it. In those cases we just give up. If we have a symbol for the function, however, we can look it up and inspect it. This isn't *entirely* safe for general use. If we calculate the derivative of a function, then change a global function that it refers to, we will have a derivative that uses the old global function and while the actual function uses the new global function. There isn't much we can do about this, though. At the point where we apply the chain rule, we need to know which arguments the function takes. That means that we need to know which function we are working with.
+For other function calls, we can inspect the function to work out which variables it has and apply the chain rules to those. This only works if we can figure out which function we are referring to, so we cannot handle cases where we have to compute it. In those cases, we just give up. If we have a symbol for the function, however, we can look it up and inspect it. This isn't *entirely* safe for general use. If we calculate the derivative of a function, then change a global function that it refers to, we will have a derivative that uses the old global function and while the actual function uses the new global function. There isn't much we can do about this, though. At the point where we apply the chain rule, we need to know which arguments the function takes. That means that we need to know which function we are working with.
 
-I will assume that the arguments used in the function call are the relevant ones to consider when we apply the chain rules. Those that we are not passing along in the function call will have default values and will not depend on the arguments given to the derivative function, so we can ignore them. Therefore, we can take the arguments in the function call and sum over those in the chain rule. We need to know the names of the arguments in order to compute the derivatives of the function, and we need to handle both positional and named arguments, and this is where we have to look up the actual function.
+I will assume that the arguments used in the function call are the relevant ones to consider when we apply the chain rules. Those that we are not passing along in the function call will have default values and will not depend on the arguments given to the derivative function so that we can ignore them. Therefore, we can take the arguments in the function call and sum over those in the chain rule. We need to know the names of the arguments to compute the derivatives of the function, and we need to handle both positional and named arguments, and this is where we have to look up the actual function.
 
-In the environment we have passed along in the recursion---the environment of the original function we are computing the derivative of---we look up the function we have to apply the chain rule to. With that function in hand we can use the function `match.call` got get all the names of the arguments in the function call. The `match.call` function takes care of merging named and positional arguments. For each argument we build a function call by changing the function to its derivative to the appropriate variable. We use the `bquote` function to call `d` to compute these derivatives. We then multiply the function call with the argument differentiated with the original variable. Collecting all these terms in a sum completes the chain rule.
+In the environment we have passed along in the recursion---the environment of the original function we are computing the derivative of---we look up the function we have to apply the chain rule to. With that function in hand, we can use the function `match.call` to get all the names of the arguments in the function call. The `match.call` function takes care of merging named and positional arguments. For each argument, we build a function call by changing the function to its derivative to the appropriate variable. We use the `bquote` function to call `d` to compute these derivatives. We then multiply the function call with the argument differentiated with the original variable. Collecting all these terms in a sum completes the chain rule.
 
 ```r
 diff_general_function_call <- function(expr, x, e) {
@@ -602,7 +602,7 @@ diff_general_function_call <- function(expr, x, e) {
 }
 ```
 
-There is one caveat with this solution: even if the original function is vectorised the derivative won't be. If we define these functions
+There is one caveat with this solution: even if the original function is vectorised, the derivative won't be. If we define these functions
 
 ```r
 f <- function(x, y) x^2 * y
@@ -612,4 +612,4 @@ h <- function(z) 4*z^4
 
 then `g` and `h` should be the same functions. However, if we calculate `d(g,"z")` and `d(h,"z")` and call them with a vector of values, the former will add all the results together while the latter will return a vector of values. The `sum` call in the derivative of `g` will gobble up all the values. You can fix this by calling `Vectorize` on `d(g,"z")`.
 
-Other than that, we now have a meta-program for translating a function into its derivative. It doesn't handle all possible functions, it has to be functions that evaluate simple expressions, the chain rule can only be applied to known functions mentioned by name, and we have only handled some of the primitive functions, but I trust you can see how you could build more functionality on top of what we have now.
+Other than that, we now have a meta-program for translating a function into its derivative. It doesn't handle all possible functions; it has to be functions that evaluate simple expressions. The chain rule can only be applied to known functions mentioned by name, and we have only handled some of the primitive functions, but I trust you can see how you could build more functionality on top of what we have now.

@@ -31,16 +31,16 @@ call("*", call("(", call("+", 2+2, quote(x))), quote(y))
 
 ## Parsing and deparsing
 
-When we use quoting to construct expressions we get objects we can manipulate via recursive functions, but we can also work with expressions as strings and translate between strings and expressions using the functions `parse` and `deparse`.
+When we use quoting to construct expressions, we get objects we can manipulate via recursive functions, but we can also work with expressions as strings and translate between strings and expressions using the functions `parse` and `deparse`.
 
-The `deparse` function translates an expression into the R source code that would be used to create the expression---represented as a string---and the `parse` function parses a string or a file and return the expressions in it.
+The `deparse` function translates an expression into the R source code that would be used to create the expression---represented as a string---and the `parse` function parses a string or a file and returns the expressions in it.
 
 ```{r}
 deparse(quote(x + y))
 parse(text = "x + y")
 ```
 
-For the call to `parse`, here, we need to specify that we are parsing a text (string). Otherwise, `parse` will assume that we are giving it a file name and try to parse the content of that file. The result of the call to `parse` is not, strictly speaking, and expression. Although the type it write is `expression`. That is an unfortunate choice for this type, because `expression` objects are actually lists of expressions. The `parse` function can parse more than one expression, and sequences of expressions are represented in the `expression` type. You can get the *actual* expressions by indexing into this object.
+For the call to `parse`, here, we need to specify that we are parsing a text (string). Otherwise, `parse` will assume that we are giving it a file name and try to parse the content of that file. The result of the call to `parse` is not, strictly speaking, and expression. Although the type it writes is `expression`. That is an unfortunate choice for this type because `expression` objects are actually lists of expressions. The `parse` function can parse more than one expression, and sequences of expressions are represented in the `expression` type. You can get the *actual* expressions by indexing into this object.
 
 ```{r}
 (expr <- parse(text = "x + y; z * x"))
@@ -48,7 +48,7 @@ expr[[1]]
 expr[[2]]
 ```
 
-The `departs` function is often used when you need a string that represents an R object---for example for a label in a plot. Many functions extract expressions given as arguments and use those as default labels. There, you cannot actually just use `deparse`. That would evaluate the expression you are trying to departs before you turn it into a string. You need to get the actual argument, and for that you need the `substitute` function.
+The `departs` function is often used when you need a string that represents an R object---for example for a label in a plot. Many functions extract expressions given as arguments and use those as default labels. There, you cannot just use `deparse`. That would evaluate the expression you are trying to departs before you turn it into a string. You need to get the actual argument, and for that, you need the `substitute` function.
 
 ```{r}
 f <- function(x) deparse(x)
@@ -63,11 +63,11 @@ g(x + y)
 
 The `substitute` function replaces variables for values in an expression. The `deparse(substitute(x))` construction we just saw exploits this by using `substitute` to get the expression that the function parameter `x` refers to before translating it into a string. If we just refer to `x` will well force an evaluation of the argument and get the value it evaluates to; instead, because we use `substitute`, we get the expression that `x` refers to.
 
-Getting the expression used as a function argument, rather than the value of the expression, is a common use of `substitute`. Together with `deparse`, it is used to create labels for plots. It is also use for so-called *non-standard evaluation*---functions that do not evaluate their arguments following the default rules for environments. Non-standard evaluation, which we return to in the next section, obtains the expressions in arguments using `substitute` and then evaluating them, using `eval` in environments different from the function's evaluation environment.
+Getting the expression used as a function argument, rather than the value of the expression, is a common use of `substitute`. Together with `deparse`, it is used to create labels for plots. It is also used for so-called *non-standard evaluation*---functions that do not evaluate their arguments following the default rules for environments. Non-standard evaluation, which we return to in the next section, obtains the expressions in arguments using `substitute` and then evaluating them, using `eval` in environments different from the function's evaluation environment.
 
-Before we consider evaluating expressions, however, we should get a handle of how `substitute` works. This depend a little bit on where it is called. In the global environment, `substitute` doesn't do anything. At least not unless you give it more arguments than the expression---we get to that shortly. In all other environments, if you just call `substitute` with an expression, the function will search through the expression and find variables. If it finds a variable that has a value in the current environment---whether it is a promise for a function call or a variable we have assigned values to---it will substitute the variable with the value. If the variable does not have a value in the environment it is left alone. In the global environment it leaves all variables alone.
+Before we consider evaluating expressions, however, we should get a handle on how `substitute` works. This depends a little bit on where it is called. In the global environment, `substitute` doesn't do anything. At least not unless you give it more arguments than the expression---we get to that shortly. In all other environments, if you just call `substitute` with an expression, the function will search through the expression and find variables. If it finds a variable that has a value in the current environment---whether it is a promise for a function call or a variable we have assigned values to---it will substitute the variable with the value. If the variable does not have a value in the environment, it is left alone. In the global environment, it leaves all variables alone.
 
-In the example below we see that `substitute(x + y)` doesn't get modified in the global environment, even though the variables `x` and `y` are defined. Inside the function environment for `f`, however, we substitute the two variables with their values.
+In the example below, we see that `substitute(x + y)` doesn't get modified in the global environment, even though the variables `x` and `y` are defined. Inside the function environment for `f`, however, we substitute the two variables with their values.
 
 ```{r}
 x <- 2; y <- 3
@@ -76,7 +76,7 @@ f <- function(x, y) substitute(x + y)
 f(2, 3)
 ```
 
-With `substitute`, variables are not found the same way as they are in `eval`. When `substitute` looks in an environment, it does not follow the parent pointer. If it doesn't find the variable to substitute in the exact environment in which it is called, it will not look further. So, if we write a functions like these:
+With `substitute`, variables are not found the same way as they are in `eval`. When `substitute` looks in an environment, it does not follow the parent pointer. If it doesn't find the variable to substitute in the exact environment in which it is called, it will not look further. So, if we write functions like these:
 
 ```{r}
 y - 3
@@ -90,7 +90,7 @@ h(3)
 
 the function `f`, when called, will have `x` in its evaluation environment and `y` in the parent environment---which is the global environment---but `substitute` will only substitute the local variable, `x`. For `h`, it will know `y` as a local variable and `x` from its closure, but only `y`, the local variable, will be substituted.
 
-The actual environment that `substitute` use to find variables is given as its second argument. The default is just the current evaluating environment. We can change that by providing either an environment or a list with variable to value mappings.
+The actual environment that `substitute` use to find variables is given as its second argument. The default is just the current evaluating environment. We can change that by providing either an environment or a list with a variable to value mapping.
 
 ```{r}
 e <- new.env(parent = emptyenv())
@@ -101,7 +101,7 @@ substitute(x + y, e)
 substitute(x + y, list(x = 2, y = 3))
 ```
 
-Again, `substitute` will not follow parent pointers, whether these are set implicitly or explicitly in the environment we pass on to the function.
+Again, `substitute` will not follow parent pointers, whether these are set implicitly or explicitly in the environment, we pass on to the function.
 
 ```{r}
 x <- 2 ; y <- 3
@@ -142,7 +142,7 @@ f <- function() {
 f()
 ```
 
-But what if you want to replace, say, `y` with 2 in the expression here. The substitution, both in the global environment with an explicit list or inside a function, will replace `expr` with `quote(x + y)`, but you want to then take that and replace `y` with 2. You cannot just get `y` from the local environment and giving it to `substitute` explicitly won't work either.
+But what if you want to replace, say, `y` with 2 in the expression here. The substitution, both in the global environment with an explicit list or inside a function, will replace `expr` with `quote(x + y)`, but you want to take that then and replace `y` with 2. You cannot just get `y` from the local environment and give it to `substitute` explicitly won't work either.
 
 ```{r}
 f <- function() {
@@ -179,7 +179,7 @@ eval(substitute(substitute(expr, list(expr = expr)), list(y = 2)))
 
 but the evaluation *first* substitutes `y` into the inner-most `substitute` expression---where there is no `y` variable---and *then* substitutes `expr` into the expression `expr`. The order is wrong.
 
-To substitute variables in an expression you hold in another variable you have to write the expression in the opposite order of what comes naturally. You don't want to substitute `expr` at the inner-most level and then `y` at the outer-most level; you want to first substitute `expr` into an substitute expression that takes care of substituting `y`. The outer-most level substitutes `expr` into `substitute(expr, list(y = 2))` which you can evaluate to get `y` substituted into the expression.
+To substitute variables in an expression, you hold in another variable you have to write the expression in the opposite order of what comes naturally. You don't want to substitute `expr` at the inner-most level and then `y` at the outer-most level; you want to first substitute `expr` into a substitute expression that takes care of substituting `y`. The outer-most level substitutes `expr` into `substitute(expr, list(y = 2))` which you can evaluate to get `y` substituted into the expression.
 
 So we create the expression we need to evaluate like this:
 
@@ -197,7 +197,7 @@ It might take a little getting used to, but you just have to remember that you n
 
 ### Substituting function arguments
 
-Function arguments are passed as unevaluated promises, but the second we access them they get evaluated. If you want to get hold of the promises without evaluating them, you can use the `substitute` function. This gives you the argument as an unevaluated, or quoted, expression.
+Function arguments are passed as unevaluated promises, but the second we access them, they get evaluated. If you want to get hold of the promises without evaluating them, you can use the `substitute` function. This gives you the argument as an unevaluated---or quoted---expression.
 
 This can be useful if you want to manipulate expressions or evaluate them in ways different from the norm---as we explore in the next section---but you do throw away information about which context the expression was supposed to be evaluated in. Consider the example below:
 
@@ -209,7 +209,7 @@ x <- 4
 g(x)
 ```
 
-In the first call to `g`, `y` has its default parameter, which is the one it gets from its closure, so it substitutes to the `x` that has the value 2. In the second call, however, we have the expression `x` from the global environment where `x` is 4. In both cases, however, we just have the expression `quote(x)`. From inside R, there is no mechanism for getting the environment out of a promise, so you cannot write code that modifies input expressions and then evaluate them in the enclosing scope for default parameters and the calling scope for function arguments.^[In the package `pryr`, which we return to at the end of this chapter, there are functions, written in C, that does provide access to the internals of promises. Using `pryr` you *can* get hold of both the expression and associated environment of a promise. In case you really need it.]
+In the first call to `g`, `y` has its default parameter, which is the one it gets from its closure, so it substitutes to the `x` that has the value 2. In the second call, however, we have the expression `x` from the global environment where `x` is 4. In both cases, however, we just have the expression `quote(x)`. From inside R, there is no mechanism for getting the environment out of a promise, so you cannot write code that modifies input expressions and then evaluates them in the enclosing scope for default parameters and the calling scope for function arguments.^[In the package `pryr`, which we return to at the end of this chapter, there are functions, written in C, that does provide access to the internals of promises. Using `pryr`, you *can* get hold of both the expression and associated environment of a promise. In case you need it.]
 
 You also have to be a little careful when you use `substitute` in functions that are called with other functions. The expression you get when you `substitute` is the exact expression a function gets called with. This expression doesn't propagate through other functions. In the example below, we call the function `g` with the expression `x + y`, but since `g` calls `f` with `expr`, that is what we get in the substitution.
 
@@ -236,7 +236,7 @@ Typical uses of non-standard evaluation, or NSE, are evaluating expressions in t
 eval(quote(x + y), list(x = 2, y = 3))
 ```
 
-Since a data frame is just a list with vector elements of the same length, we can also evaluate expressions in the context of these.
+Since a data frame is just a list of vector elements of the same length, we can also evaluate expressions in the context of these.
 
 ```{r}
 d <- data.frame(x = 1:2, y = 3:3)
@@ -250,7 +250,7 @@ x <- 2; y <-  3
 eval(x + y, d)
 ```
 
-To do NSE, we have to explicitly substitute an argument so we do not evaluate the argument-promise in the calling scope, and then evaluate it in an alternative scope. For example, we can implement our own version of the `with` function like this:
+To do NSE, we have to explicitly substitute an argument, so we do not evaluate the argument-promise in the calling scope, and then evaluate it in an alternative scope. For example, we can implement our own version of the `with` function like this:
 
 ```{r}
 my_with <- function(df, expr) {
@@ -260,9 +260,9 @@ d <- data.frame(x = rnorm(5), y = rnorm(5))
 my_with(d, x + y)
 ```
 
-Here, the expression `x + y` is *not* quoted in the function call, so normally we would expect `x + y` to be evaluated in the calling scope. Because we explicitly `substitute` the argument in `my_with` this does not happen, instead we evaluate the expression in the context of the data frame. This is non-standard evaluation.
+Here, the expression `x + y` is *not* quoted in the function call, so normally we would expect `x + y` to be evaluated in the calling scope. Because we explicitly `substitute` the argument in `my_with` this does not happen. Instead, we evaluate the expression in the context of the data frame. This is non-standard evaluation.
 
-The real `with` function actually works a little better than our version. If the expression we evaluate contains variables that are not found in the data frame, then it takes these variables from the calling scope. Our version can also handle variables that do not appear in the data frame, but it works slightly differently.
+The real `with` function works a little better than our version. If the expression we evaluate contains variables that are not found in the data frame, then it takes these variables from the calling scope. Our version can also handle variables that do not appear in the data frame, but it works slightly differently.
 
 If we use the two functions in the global scope we don't see a difference:
 
@@ -283,7 +283,7 @@ g(2)
 
 What is going on here?
 
-Well, `eval` takes a third argument that gives the enclosing scope for the evaluation. In `my_with` we haven't provided this, so we use the default value, which is the enclosing scope where we call `eval`, which is the evaluating environment of `my_with`. We haven't defined `z` in this environment, but the enclosing scope include the global environment where we have. When we evaluate the expression in `my_with` we find `z` in the global environment. In contrast, when we use `with`, the enclosing environment is the calling environment.
+Well, `eval` takes a third argument that gives the enclosing scope for the evaluation. In `my_with` we haven't provided this, so we use the default value, which is the enclosing scope where we call `eval`, which is the evaluating environment of `my_with`. We haven't defined `z` in this environment, but the enclosing scope includes the global environment where we have. When we evaluate the expression in `my_with`, we find `z` in the global environment. In contrast, when we use `with`, the enclosing environment is the calling environment.
 
 We can change `my_with` to have the same behaviour thus:
 
@@ -331,7 +331,7 @@ my_with(d, x + y)
 
 ### Writing macros with NSE
 
-Since NSE allows you to evaluate expressions in the calling scope, you can use it write macros, that is, functions that work as short-cuts for statements where they are called. These differ from functions, that cannot generally modify data outside of their own scope, and I will not recommend using them unless you have very good reasons to---the immutability of data is a very important feature of R and violating it with macros goes against this---but because it is a good example of what you can do with NSE I will include the example here.
+Since NSE allows you to evaluate expressions in the calling scope, you can use it write macros, that is, functions that work as shortcuts for statements where they are called. These differ from functions, that cannot generally modify data outside of their own scope, and I will not recommend using them unless you have very good reasons to---the immutability of data is a very important feature of R and violating it with macros goes against this---but because it is a good example of what you can do with NSE I will include the example here.
 
 Consider the code below. This example is a modified implementation of the macro code presented in [*Programmer's Niche: Macros in R*(https://www.r-project.org/doc/Rnews/Rnews_2001-3.pdf) by Thomas Lumley, R Journal, 2001]. I have simplified the macro making function a bit; you can see the full version in the original article online.
 
@@ -367,7 +367,7 @@ make_macro <- function(..., body) {
 }
 ```
 
-The first function simply extracts the names from a list of function parameters and make sure that all parameters actually have a name. This is necessary later, when we construct the `formals` list of a function. In a `formals` list, all parameters must have a name, and we construct these names with this function. The second function is the interesting one. Here we construct a macro by constructing a function whose body will be evaluated in its calling scope. We first get hold of the parameters and body the macro should have. The parameters we get into an `list` by substituting `...` in and then evaluating the `alist(...)` expression. Without the substitution we would get the argument list that just contains `...` but with the substitution we get the arguments that are passed to the `make_macro` function, except for the named argument `body` that we just translate into the expression passed to the `make_macro` with another `substitute` call.
+The first function simply extracts the names from a list of function parameters and make sure that all parameters have a name. This is necessary later when we construct the `formals` list of a function. In a `formals` list, all parameters must have a name, and we construct these names with this function. The second function is the interesting one. Here we construct a macro by constructing a function whose body will be evaluated in its calling scope. We first get hold of the parameters and body the macro should have. The parameters we get into a `list` by substituting `...` in and then evaluating the `alist(...)` expression. Without the substitution we would get the argument list that just contains `...` but with the substitution we get the arguments that are passed to the `make_macro` function, except for the named argument `body` that we just translate into the expression passed to the `make_macro` with another `substitute` call.
 
 The function we construct is where the magic happens. We create the expression 
 
@@ -375,7 +375,7 @@ The function we construct is where the magic happens. We create the expression
 substitute(function() eval(substitute(body), parent.frame()))
 ```
 
-where `body` will be replaced with the expression we pass to the macro. When we evaluate this, we get the function
+where `body` will be replaced with the expression that we pass to the macro. When we evaluate this, we get the function
 
 ```r
 function() eval(substitute(<body>), parent.frame())
@@ -396,7 +396,7 @@ x <- 2; y <- 4
 m()
 ```
 
-The last part of the `make_macro` code sets the formal arguments of the macro. It simply takes the parameters we have specified, make sure they all have a name, and then make them into a list and sets `formals(f)`. After that, `make_macro` returns the constructed function.
+The last part of the `make_macro` code sets the formal arguments of the macro. It simply takes the parameters we have specified, makes sure they all have a name, and then make them into a list and sets `formals(f)`. After that, `make_macro` returns the constructed function.
 
 We can use this function to create a macro that replaces specific values in a column in a data frame with `NA` like this:
 
@@ -443,7 +443,7 @@ d
 
 ### Modifying environments in evaluations
 
-The reason we can modify variables in macros is that we can modify environments. Actual values are immutable, but when we modify the data frame in the example above, we are replacing the reference in the environment to the modified data. If other variables refers to the same data frame, they will still be referring to the original version. Even with macros, we cannot *actually* modify data, but we can modify environments, and because we can evaluate expressions in environments different from the current evaluating environment, we can make it appear as if we are modifying data in the calling environment.
+The reason we can modify variables in macros is that we can modify environments. Actual values are immutable, but when we modify the data frame in the example above, we are replacing the reference in the environment to the modified data. If other variables refer to the same data frame, they will still be referring to the original version. Even with macros, we cannot *actually* modify data, but we can modify environments, and because we can evaluate expressions in environments different from the current evaluating environment, we can make it appear as if we are modifying data in the calling environment.
 
 We can see this by examining the evaluation environment explicitly when we evaluate an assignment. If we explicitly make an environment and evaluate an assignment in it, we see that it gets modified.
 
@@ -480,7 +480,7 @@ x <- 4; y <- 5
 g(x + y)
 ```
 
-For a promise we get the expression it corresponds to in the `code` field, the environment it belongs to in the `env` field, whether it has been evaluated yet in the `evaled` field, and if it has been evaluated the corresponding value is in the `value` field. In the two different calls to `g` we see that the `code` is the same but the environment is different. In the first call, where we use the default values for parameter `z`, the environment is the `f` closure and in the second, where we call `g` with an expression from the global environment, the promise environment is also the global environment.
+For a promise we get the expression it corresponds to in the `code` field, the environment it belongs to in the `env` field, whether it has been evaluated yet in the `evaled` field, and if it has been evaluated the corresponding value is in the `value` field. In the two different calls to `g`, we see that the `code` is the same, but the environment is different. In the first call, where we use the default values for parameter `z`, the environment is the `f` closure, and in the second, where we call `g` with an expression from the global environment, the promise environment is also the global environment.
 
 We can see the difference between when a promise has been evaluated and before it is in the following example:
 
@@ -495,7 +495,7 @@ g <- function(x) {
 g(x + y)
 ```
 
-The code doesn't change when we evaluate a promise but the environment is removed---we do not need to hold a reference to an environment we no longer need, and if we are the only one holding on to this environment we can free it for garbage collection by no longer holding on to it when we don't need it any longer---and the result of evaluating the promise is put in `value` and `evaled` is set to `TRUE`.
+The code doesn't change when we evaluate a promise, but the environment is removed---we do not need to hold a reference to an environment we no longer need, and if we are the only one holding on to this environment we can free it for garbage collection by no longer holding on to it when we don't need it any longer---and the result of evaluating the promise is put in `value` and `evaled` is set to `TRUE`.
 
 We can use the promise info to modify an environment and still evaluate it in the right scope. We just need to get hold of the code, which we can get either by the expression
 
@@ -512,9 +512,9 @@ eval(substitute(
   substitute(expr, list(y = quote(2 * y)))))
 ```
 
-where `expr` is the parameter that holds the promise and `pi` is the result of calling `promise_info(expr)`. Neither is particularly pretty, and you have to remember to construct the expressions inside out, but that is the way you can get an expression substituted in for a variable that holds it and then modify it. Of the two, the traditional approach---the second of the two---is probably the simplest.
+where `expr` is the parameter that holds the promise, and `pi` is the result of calling `promise_info(expr)`. Neither is particularly pretty, and you have to remember to construct the expressions inside out, but that is the way you can get an expression substituted in for a variable that holds it and then modify it. Of the two, the traditional approach---the second of the two---is probably the simplest.
 
-In both cases we are creating the expression
+In both cases, we are creating the expression
 
 ```r
 substitute(<expr>, list(y = quote(2 * y)))
@@ -558,4 +558,4 @@ z <- 4
 g(z)
 ```
 
-In both cases we modify the expression in the promise---just in two different ways---and then we evaluate it in the promise scope. In the first case, `y` is taken from the promise scope if it appears in the modified expression; in the second case, `y` is replaced by the value we have in the enclosing scope.
+In both cases, we modify the expression in the promise---just in two different ways---and then we evaluate it in the promise scope. In the first case, `y` is taken from the promise scope if it appears in the modified expression; in the second case, `y` is replaced by the value we have in the enclosing scope.
