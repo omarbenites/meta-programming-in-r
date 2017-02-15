@@ -467,4 +467,95 @@ Here we see that the list is *not* modified. It is only environments we can modi
 
 ## Accessing promises using the `pryr` package
 
+As I mentioned before, there is no mechanism in pure R to get access to the internals of promises, so if you use `substitute` to translate a function argument into its corresponding expression then you loose information about which environment the expression should be evaluated in. You can, however, use the `pryr` package to examine promises. This package has the function `promise_info` that tells you both what the expression is and the environment it belongs to.
 
+Consider this:
+
+```{r}
+library(pryr)
+f <- function(x, y) function(z = x + y) promise_info(z)
+g <- f(2, 3)
+g()
+x <- 4; y <- 5
+g(x + y)
+```
+
+For a promise we get the expression it corresponds to in the `code` field, the environment it belongs to in the `env` field, whether it has been evaluated yet in the `evaled` field, and if it has been evaluated the corresponding value is in the `value` field. In the two different calls to `g` we see that the `code` is the same but the environment is different. In the first call, where we use the default values for parameter `z`, the environment is the `f` closure and in the second, where we call `g` with an expression from the global environment, the promise environment is also the global environment.
+
+We can see the difference between when a promise has been evaluated and before it is in the following example:
+
+```{r}
+g <- function(x) {
+  cat("=== Before evaluation =====\\n")
+  print(promise_info(x))
+  force(x)
+  cat("=== After evaluation ======\\n")
+  promise_info(x)
+}
+g(x + y)
+```
+
+The code doesn't change when we evaluate a promise but the environment is removed---we do not need to hold a reference to an environment we no longer need, and if we are the only one holding on to this environment we can free it for garbage collection by no longer holding on to it when we don't need it any longer---and the result of evaluating the promise is put in `value` and `evaled` is set to `TRUE`.
+
+We can use the promise info to modify an environment and still evaluate it in the right scope. We just need to get hold of the code, which we can get either by the expression
+
+```r
+eval(substitute(
+  substitute(code, list(y = quote(2 * y))), 
+  list(code = pi$code)))
+```
+
+or the expression
+
+```r
+eval(substitute(
+  substitute(expr, list(y = quote(2 * y)))))
+```
+
+where `expr` is the parameter that holds the promise and `pi` is the result of calling `promise_info(expr)`. Neither is particularly pretty, and you have to remember to construct the expressions inside out, but that is the way you can get an expression substituted in for a variable that holds it and then modify it. Of the two, the traditional approach---the second of the two---is probably the simplest.
+
+In both cases we are creating the expression
+
+```r
+substitute(<expr>, list(y = quote(2 * y)))
+```
+
+where `<expr>` refers to the expression in the promise, and we then evaluate this expression, to substitute `y` for `quote(2 * y)`.
+
+Evaluating the expression once we have modified it is almost trivial in comparison. We can just use `eval(expr, pi$env)`.
+
+```{r}
+f <- function(x, y) function(expr = x + y) {
+  pi <- promise_info(expr)
+  expr <- eval(substitute(
+    substitute(expr, list(y = quote(2 * y)))))
+  value <- eval(expr, pi$env)
+  list(expr = expr, value = value)
+}
+g <- f(2, 2)
+g()
+x <- y <- 4
+g(x + y)
+z <- 4
+g(z)
+```
+
+In the substitution when we create `expr` it is important that we replace `y` with `quote(2 * y)` and not simply `2 * y`. If we did the latter, then `y` would be evaluated in the standard way and would refer to the `y` in the enclosing scope, the parameter given to the call to `f` that creates `g`. Of course, that could be what we wanted: substitute whatever `y` is in the input expression with the `y` we have in the enclosing scope. In that case, the code would simply look like this:
+
+```{r}
+f <- function(x, y) function(expr = x + y) {
+  pi <- promise_info(expr)
+  expr <- eval(substitute(
+    substitute(expr, list(y = 2 * y))))
+  value <- eval(expr, pi$env)
+  list(expr = expr, value = value)
+}
+g <- f(2, 2)
+g()
+x <- y <- 4
+g(x + y)
+z <- 4
+g(z)
+```
+
+In both cases we modify the expression in the promise---just in two different ways---and then we evaluate it in the promise scope. In the first case, `y` is taken from the promise scope if it appears in the modified expression; in the second case, `y` is replaced by the value we have in the enclosing scope.

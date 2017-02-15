@@ -214,7 +214,7 @@ x <- 2; y <- 4
 m()
 
 set_NA_val <- make_macro(df, var, na_val, 
-                         body = { df$var[df$var == na_val] <- NA })
+                         body = df$var[df$var == na_val] <- NA)
 
 (d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)))
 set_NA_val(d, x, -9); d
@@ -232,3 +232,46 @@ library(magrittr)
 d <- data.frame(x = c(1,-9,3,4), y = c(1,2,-9,-9)) %>%
   set_NA_val_fun("x", -9) %>% set_NA_val_fun("y", -9)
 d
+
+rm(z)
+
+e <- list2env(list(x = 2, y = 3))
+eval(quote(z <- x + y), e)
+as.list(e)
+
+l <- list(x = 2, y = 3)
+eval(quote(z <- x + y), l)
+l
+
+
+
+library(pryr)
+f <- function(x, y) function(z = x + y) promise_info(z)
+g <- f(2, 3)
+g()
+x <- 4; y <- 5
+g(x + y)
+
+
+x <- 2; y <- 3
+f <- function(x) promise_info(x)
+f(x + y)
+
+g <- function(x) {
+  cat("=== Before evaluation =====")
+  print(promise_info(x))
+  force(x)
+  cat("=== After evaluation ======")
+  promise_info(x)
+}
+g(x + y)
+
+f <- function(x, y) function(expr = x + y) {
+  pi <- promise_info(expr)
+  expr <- bquote(2 * .(expr))
+  eval(expr, pi$env)
+}
+g <- f(2, 2)
+g()
+x <- y <- 4
+g(x + y)
