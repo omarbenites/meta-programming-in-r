@@ -268,10 +268,46 @@ g(x + y)
 
 f <- function(x, y) function(expr = x + y) {
   pi <- promise_info(expr)
-  expr <- bquote(2 * .(expr))
-  eval(expr, pi$env)
+  expr <- eval(substitute(
+    substitute(expr, list(y = quote(2 * y)))))
+  value <- eval(expr, pi$env)
+  list(expr = expr, value = value)
 }
 g <- f(2, 2)
 g()
 x <- y <- 4
 g(x + y)
+z <- 4
+g(z)
+
+f <- function(x, y) function(expr = x + y) {
+  pi <- promise_info(expr)
+  expr <- eval(substitute(substitute(code, list(y = quote(2 * y))), list(code = pi$code)))
+  value <- eval(expr, pi$env)
+  list(expr = expr, value = value)
+}
+g <- f(2, 2)
+g()
+x <- y <- 4
+g(x + y)
+z <- 4
+g(z)
+
+rm(y)
+g(z)
+
+
+
+f <- function(x, y) function(expr = x + y) {
+  pi <- promise_info(expr)
+  expr <- eval(substitute(
+    substitute(expr, list(y = 2 * y))))
+  value <- eval(expr, pi$env)
+  list(expr = expr, value = value)
+}
+g <- f(2, 2)
+g()
+x <- y <- 4
+g(x + y)
+z <- 4
+g(z)

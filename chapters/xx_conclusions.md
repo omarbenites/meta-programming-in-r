@@ -1,0 +1,8 @@
+# Conclusions
+
+You have now seen the various techniques used for manipulating the actual language constructs of R from within R programs. Manipulating the actual language, doing meta-programming, gives you the tools to extend R in various ways. You can write functions for modifying other functions---as we did with the code for computing the derivative of a function---or you can write small embedded domain-specific languages for manipulating or querying data frames, as done in `dplyr` and `ggplot2`. You know how to do non-standard evaluation, changing how expressions are evaluated so you can evaluate them in different scopes than what they would usually be evaluated in, which can often simplify how functions are used in pipelines; but you should be careful with using such programming when writing programs since it can be hard to reason about expressions passed between functions.
+
+You don't want to overdo meta-programming. Someone reading your code will, presumably, know how to read R code, so you shouldn't break his expectations for how the code will be evaluated. If you develop a domain-specific language and use meta-programming for this, you are generally fine; someone who can read the expressions you implement there will know how they behave, but use meta-programming with care. It is a very powerful tool, but also a very big gun to shoot yourself in the foot with, if you are not careful.
+
+This is the end of the book. I hope it has been useful in learning object-oriented programming as understood by the R programming language. If you liked this book, why not check out my [list of other books](http://wp.me/P9B2l-DN) or 
+[sign up to my mailing list](http://eepurl.com/cwIbR5)?
