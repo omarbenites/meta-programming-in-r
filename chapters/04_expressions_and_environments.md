@@ -101,7 +101,19 @@ If a package imports other packages, these goes into the import environment, bel
  
  Using `Imports:` you just require that a set of other packages are installed before your own package can be installed. Those packages, however, are not put on the search path, nor are they imported in the `imports` environment. Using `Imports:` just enable you to access functions and data in another package using the package namespace prefix, so if you `Imports:` the `stats` package you know you can access `stats::sd` because that function is guaranteed to exist on the installation when your package is used.
  
- Actually importing variables into the `imports` namespace, you need to modify the `NAMESPACE` file, using the directives `imports()`, `importFrom()`, `importClassesFrom()`, or `importMethodsFrom()`. The easiest way to handle the `NAMESPACE` file, though, is using `Roxygen`, and here you can import names using `@importFrom <package> <name>` for a single function, `@import <package>` for the entire package, and `@importClassesFrom <package> <classes>` and `@importMethodsFrom <package> <methods>` for S4 classes.
+Actually importing variables into the `imports` namespace, you need to modify the `NAMESPACE` file, using the directives 
+ 
+ - `imports()`
+ - `importFrom()`
+ - `importClassesFrom()`
+ - `importMethodsFrom()` 
+
+for importing an entire package, functions, S4 classes and S4 methods, respectively. The easiest way to handle the `NAMESPACE` file, though, is using `Roxygen`, and here you can import names using 
+
+- `@import <package>`
+- `@importFrom <package> <name>`
+- `@importClassesFrom <package> <classes>`
+- `@importMethodsFrom <package> <methods>`
  
  To ensure that packages you write play well with other namespaces you should use `Imports:` for dependencies you absolutely need (and `Suggests:` for other dependencies) and either use the package prefixes for dependencies in other packages or import the dependencies in the `NAMESPACE`.
 

@@ -346,7 +346,8 @@ simplify_function_call <- function(expr) {
   }
 
   if (all(unlist(Map(is.numeric, arguments)))) {
-    if (as.character(function_name) %in% c("sin", "cos", "exp", "log")) {
+    if (as.character(function_name) %in% 
+			    c("sin", "cos", "exp", "log")) {
       result <- do.call(as.character(function_name), arguments)
       return(result)
     }
