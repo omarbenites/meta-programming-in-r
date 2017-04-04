@@ -78,10 +78,11 @@ bind <- function(...) {
       # if we have a name we also have an expression and we evaluate that in the
       # environment of the value followed by the enclosing environment and assign
       # the result to the name.
-      assignment <- substitute(delayedAssign(name, expr, 
-                                             eval.env = value_env,
-                                            assign.env = bindings$scope),
-                               list(expr = bindings$bindings[[i]]))
+      assignment <- substitute(
+        delayedAssign(name, expr, 
+                      eval.env = value_env,
+                      assign.env = bindings$scope),
+        list(expr = bindings$bindings[[i]]))
       eval(assignment)
     }
     
